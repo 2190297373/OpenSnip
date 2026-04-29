@@ -11,7 +11,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Tauri-v2-24C8D8?logo=tauri"/>
-  <img src="https://img.shields.io/github/license/2190297373/OpenSnip"/>
+  <img src="https://img.shields.io/github/license/FuSheng-MG/OpenSnip"/>
   <img src="https://img.shields.io/badge/platform-Windows-blue"/>
   <img src="https://img.shields.io/badge/status-active-success"/>
 </p>
@@ -102,7 +102,7 @@ Screenshot → OCR → Translate → Upload → Share → Notify
 **Requirements:** Windows 10/11 · Node.js ≥ 18 · Rust ≥ 1.70 · VS2022 Build Tools
 
 ```bash
-git clone https://github.com/2190297373/OpenSnip.git
+git clone https://github.com/FuSheng-MG/OpenSnip.git
 cd OpenSnip
 npm install
 npm run tauri dev      # dev mode
