@@ -11,6 +11,8 @@ use windows::Win32::Graphics::Gdi::{
     SRCCOPY, HORZRES, VERTRES,
 };
 
+pub struct ScreenshotService;
+
 impl ScreenshotService {
     pub fn new() -> Self {
         ScreenshotService
