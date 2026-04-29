@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useCallback, useState } from "react";
 import { useCanvas, Point, Annotation, Bounds } from "./CanvasContext";
+import { computeSnap, drawGuides, type GuideLine } from "./snapToGuides";
 
 interface AnnotationCanvasProps {
   className?: string;
@@ -284,6 +285,8 @@ export function AnnotationCanvas({ className = "" }: AnnotationCanvasProps) {
     current: { x: 0, y: 0 },
   });
 
+  const [guides, setGuides] = useState<GuideLine[]>([]);
+
   // Load background image
   useEffect(() => {
     if (!state.image) {
@@ -343,6 +346,11 @@ export function AnnotationCanvas({ className = "" }: AnnotationCanvasProps) {
       for (const annotation of state.annotations) {
         drawAnnotation(ctx, annotation, annotation.id === state.selectedId);
       }
+    }
+
+    // Draw alignment guides (pink dashed lines for snapping)
+    if (guides.length > 0) {
+      drawGuides(ctx, guides);
     }
 
     // Draw marquee selection box
@@ -443,7 +451,7 @@ export function AnnotationCanvas({ className = "" }: AnnotationCanvasProps) {
           break;
       }
     }
-  }, [state, marquee]);
+  }, [state, marquee, guides]);
 
   useEffect(() => {
     redraw();
@@ -607,12 +615,19 @@ export function AnnotationCanvas({ className = "" }: AnnotationCanvasProps) {
       if (dragState.mode === "move" && state.selectedId) {
         const dx = point.x - dragState.startPoint.x;
         const dy = point.y - dragState.startPoint.y;
-        const newBounds = {
+        let newBounds = {
           x: dragState.startBounds.x + dx,
           y: dragState.startBounds.y + dy,
           width: dragState.startBounds.width,
           height: dragState.startBounds.height,
         };
+
+        // Alignment snapping
+        const others = state.annotations.filter(a => a.id !== state.selectedId)
+          .map(a => a.bounds);
+        const snap = computeSnap(newBounds, others);
+        setGuides(snap.guides);
+        newBounds = snap.bounds;
 
         const updates: Partial<Annotation> = { bounds: newBounds };
 
@@ -660,6 +675,13 @@ export function AnnotationCanvas({ className = "" }: AnnotationCanvasProps) {
             break;
         }
 
+        // Alignment snapping for resize
+        const others = state.annotations.filter(a => a.id !== state.selectedId)
+          .map(a => a.bounds);
+        const snap = computeSnap(newBounds, others, true);
+        setGuides(snap.guides);
+        newBounds = snap.bounds;
+
         dispatch({
           type: "UPDATE_ANNOTATION",
           payload: { id: state.selectedId, updates: { bounds: newBounds } },
@@ -688,6 +710,7 @@ export function AnnotationCanvas({ className = "" }: AnnotationCanvasProps) {
         startPoint: { x: 0, y: 0 },
         startBounds: { x: 0, y: 0, width: 0, height: 0 },
       });
+      setGuides([]);
     }
 
     if (marquee.active) {
