@@ -1,0 +1,45 @@
+{
+  "settings": {
+    "languageLabel": "语言",
+    "languageOptions": {
+      "zh_CN": "简体中文",
+      "en": "English"
+    },
+    "themeLabel": "主题",
+    "themeOptions": {
+      "system": "系统",
+      "light": "亮色",
+      "dark": "暗色"
+    },
+    "startMinimized": "启动时最小化到托盘",
+    "saved": "已保存",
+    "save": "保存",
+    "reset": "还原默认",
+    "shortcutsTitle": "Shortcuts"
+  },
+  "sections": {
+    "system": "系统",
+    "capture": "截图",
+    "pin": "便签",
+    "annotation": "注释",
+    "recording": "录制",
+    "shortcuts": "快捷键"
+  },
+  "shortcuts": {
+    "screenshot": "截图",
+    "scroll_capture": "滚动截图",
+    "recording": "录屏"
+  },
+  "translationPanel": {
+    "title": "翻译",
+    "clear": "清空",
+    "sourceLabel": "源文本",
+    "detected": "检测到",
+    "placeholderInput": "请输入要翻译的文本",
+    "languageConflict": "源语言和目标语言不能相同",
+    "translating": "翻译中...",
+    "translate": "翻译",
+    "resultTitle": "翻译结果",
+    "copy": "复制"
+  }
+}

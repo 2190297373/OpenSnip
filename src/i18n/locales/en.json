@@ -1,0 +1,71 @@
+{
+  "settings": {
+    "languageLabel": "Language",
+    "languageOptions": {
+      "zh_CN": "Simplified Chinese",
+      "en": "English"
+    },
+    "themeLabel": "Theme",
+    "themeOptions": {
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "startMinimized": "Start minimized to tray",
+    "saved": "Saved",
+    "save": "Save",
+    "reset": "Reset to defaults",
+    "shortcutsTitle": "Shortcuts"
+  },
+  "sections": {
+    "system": "System",
+    "capture": "Capture",
+    "pin": "Pin",
+    "annotation": "Annotation",
+    "recording": "Recording",
+    "shortcuts": "Shortcuts"
+  },
+  "shortcuts": {
+    "screenshot": "Screenshot",
+    "scroll_capture": "Scroll Capture",
+    "recording": "Recording"
+  },
+  "translationPanel": {
+    "title": "Translation",
+    "clear": "Clear",
+    "sourceLabel": "Source Text",
+    "detected": "Detected",
+    "placeholderInput": "Enter text to translate...",
+    "languageConflict": "Source and target languages must be different",
+    "translating": "Translating...",
+    "translate": "Translate",
+    "resultTitle": "Translation result",
+    "copy": "Copy"
+  },
+  "ocrPanel": {
+    "title": "OCR Text Recognition",
+    "placeholderImage": "Please capture an image first",
+    "error": "OCR failed",
+    "placeholderStart": "Click 'Recognize Text' button to start OCR",
+    "processing": "Processing...",
+    "fullText": "Full Text",
+    "unknown": "Unknown",
+    "language": {
+      "auto": "Auto Detect",
+      "zh_CN": "Chinese",
+      "en": "English",
+      "ja": "Japanese",
+      "ko": "Korean"
+    },
+    "stats": {
+      "wordCount": "Word Count",
+      "language": "Language",
+      "time": "Time"
+    },
+    "resultsHeader": "OCR Results",
+    "blocks": "Text Blocks",
+    "confidence": "Confidence",
+    "copy": "Copy",
+    "recognize": "Recognize Text"
+  }
+}
