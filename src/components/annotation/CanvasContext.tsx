@@ -12,6 +12,7 @@ export type ToolType =
   | "highlighter"
   | "mosaic"
   | "blur"
+  | "spotlight"
   | "eraser"
   | "numbering";
 

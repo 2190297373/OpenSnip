@@ -56,6 +56,7 @@ export function AnnotationToolbar() {
     { type: "highlighter", icon: "▬", label: "Highlighter (H)" },
     { type: "mosaic", icon: "▦", label: "Mosaic (M)" },
     { type: "blur", icon: "◯", label: "Blur (B)" },
+    { type: "spotlight", icon: "◎", label: "Spotlight (S)" },
     { type: "numbering", icon: "①", label: "Numbering (N)" },
   ];
 

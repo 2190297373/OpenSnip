@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useCallback, useState } from "react";
 import { useCanvas, Point, Annotation, Bounds } from "./CanvasContext";
 import { computeSnap, drawGuides, type GuideLine } from "./snapToGuides";
+import { applyGaussianBlur, drawSpotlight } from "./canvasEffects";
 
 interface AnnotationCanvasProps {
   className?: string;
@@ -189,9 +190,36 @@ function drawAnnotation(
       break;
 
     case "blur":
-      ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
-      ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
+      // Rasterize the background in the blur region, then apply CSS blur filter
+      ctx.save();
+      if (bgCanvasRef.current) {
+        ctx.filter = `blur(${style.blurRadius}px)`;
+        ctx.drawImage(
+          bgCanvasRef.current,
+          bounds.x, bounds.y, bounds.width, bounds.height,
+          bounds.x, bounds.y, bounds.width, bounds.height
+        );
+      } else {
+        // Fallback: semi-transparent overlay
+        ctx.fillStyle = `rgba(200, 200, 200, 0.6)`;
+        ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
+      }
+      ctx.restore();
       break;
+
+    case "spotlight": {
+      // Spotlight: dim everything except the focal area
+      const canvas = ctx.canvas;
+      drawSpotlight(
+        ctx,
+        bounds,
+        canvas.width,
+        canvas.height,
+        "rgba(0, 0, 0, 0.7)",
+        30
+      );
+      break;
+    }
 
     case "numbering":
       if (number !== undefined) {
@@ -270,6 +298,7 @@ export function AnnotationCanvas({ className = "" }: AnnotationCanvasProps) {
   const { state, dispatch } = useCanvas();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const bgCanvasRef = useRef<HTMLCanvasElement | null>(null); // clean background for blur
   const [, setImageData] = useState<ImageData | null>(null);
 
   // Interaction states
@@ -301,6 +330,17 @@ export function AnnotationCanvas({ className = "" }: AnnotationCanvasProps) {
 
       canvas.width = img.width;
       canvas.height = img.height;
+
+      // Save a clean background copy for blur tool
+      const bgCanvas = document.createElement("canvas");
+      bgCanvas.width = img.width;
+      bgCanvas.height = img.height;
+      const bgCtx = bgCanvas.getContext("2d");
+      if (bgCtx) {
+        bgCtx.drawImage(img, 0, 0);
+        bgCanvasRef.current = bgCanvas;
+      }
+
       dispatch({ type: "SET_SIZE", payload: { width: img.width, height: img.height } });
 
       const ctx = canvas.getContext("2d");
@@ -329,14 +369,30 @@ export function AnnotationCanvas({ className = "" }: AnnotationCanvasProps) {
     }
 
     // Draw annotations from all visible layers (bottom to top)
+    // Pass 1: background effects (spotlight, blur)
+    // Pass 2: regular annotations on top
     const layers = (state as any).layers;
     if (layers && layers.length > 0) {
       ctx.save();
+      // Pass 1: spotlight + blur effects
+      for (const layer of layers) {
+        if (!layer.visible) continue;
+        const effects = layer.annotations.filter(
+          (a: Annotation) => a.toolType === "spotlight" || a.toolType === "blur"
+        );
+        for (const annotation of effects) {
+          drawAnnotation(ctx, annotation, false);
+        }
+      }
+      // Pass 2: regular annotations
       for (const layer of layers) {
         if (!layer.visible) continue;
         ctx.globalAlpha = layer.opacity ?? 1;
         const isCurrentLayer = layer.id === (state as any).currentLayerId;
-        for (const annotation of layer.annotations) {
+        const regular = layer.annotations.filter(
+          (a: Annotation) => a.toolType !== "spotlight" && a.toolType !== "blur"
+        );
+        for (const annotation of regular) {
           drawAnnotation(ctx, annotation, annotation.id === state.selectedId && isCurrentLayer);
         }
       }
