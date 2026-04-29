@@ -92,7 +92,7 @@ impl OcrService {
             .ok_or_else(|| "OCR: no language pack available. Install a language pack in Windows Settings.".to_string())?;
 
         // 5. Run recognition
-        let _win_result = engine
+        let _win_result: windows::Media::Ocr::OcrResult = engine
             .RecognizeAsync(&bitmap)
             .map_err(|e| format!("OCR: recognize async failed: {}", e))?
             .get()
