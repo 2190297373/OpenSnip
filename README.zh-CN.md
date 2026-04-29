@@ -122,4 +122,4 @@ npm run tauri build    # 发布构建
 
 ## 📄 开源协议
 
-MIT © 2026 [2190297373](https://github.com/2190297373)
+MIT © 2026 FuSheng_MG
