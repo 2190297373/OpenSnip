@@ -5,15 +5,15 @@
 <h1 align="center">OpenSnip</h1>
 
 <p align="center">
-  轻量级截图与标注工具<br/>
-  <b>截图 · 标注 · 钉图</b>
+  <b>下一代 Windows 截图 & 标注工具</b><br/>
+  截图 · 标注 · 贴图 · 文字识别
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Tauri-v2-24C8D8?logo=tauri"/>
   <img src="https://img.shields.io/github/license/2190297373/OpenSnip"/>
   <img src="https://img.shields.io/badge/platform-Windows-blue"/>
-  <img src="https://img.shields.io/github/v/release/2190297373/OpenSnip"/>
+  <img src="https://img.shields.io/badge/status-active-success"/>
 </p>
 
 <p align="center">
@@ -22,91 +22,62 @@
 
 ---
 
-## 🎬 演示
-
-> GIF 演示占位（建议添加 5-8 秒的截图+标注+贴图演示 GIF）
-
-<p align="center">
-  <img src="assets/demo.gif" width="720" alt="Demo GIF placeholder"/>
-</p>
-
----
-
-## ✨ 项目简介
-
-OpenSnip 是一款**轻量级桌面截图与标注工具**，专注于效率与简洁体验。
-
-**截图 → 标注 → 钉图 → 秒速完成**
-
----
-
 ## ⚡ 功能特性
 
 | 功能 | 说明 | 状态 |
 |------|------|------|
-| 📸 快速截图 | 全屏、区域、窗口截图 | ✅ 可用 |
-| ✏️ 标注工具 | 矩形、箭头、文字、画笔、马赛克 | ✅ 可用 |
-| 🎨 样式控制 | 颜色、线宽、字号、阴影 | ✅ 可用 |
-| 📌 钉图窗口 | 置顶浮动截图 | ✅ 可用 |
-| 🖱 鼠标穿透 | 锁定后点击穿透 | ✅ 可用 |
-| 💾 导出与复制 | 保存 PNG、复制到剪贴板 | ✅ 可用 |
-| ↩️ 撤销重做 | 完整历史记录 | ✅ 可用 |
-| 🔍 OCR 文字识别 | 从截图提取文字（Windows.Media.Ocr） | 🔧 已实现 |
-| 🌐 翻译 | 多语言翻译（MyMemory API） | ✅ 可用 |
-| 🎬 录屏 | 屏幕录制 | 🔧 即将推出 |
+| 📸 截图 | 全屏、区域、窗口截图 | ✅ |
+| ✏️ 标注 | 矩形、箭头、文字、画笔、马赛克 | ✅ |
+| 🎨 样式控制 | 颜色、线宽、字号、阴影 | ✅ |
+| 📌 贴图 | 置顶浮动截图 | ✅ |
+| 🖱️ 鼠标穿透 | 锁定后点击穿透 | ✅ |
+| 💾 导出与复制 | 保存 PNG、复制到剪贴板 | ✅ |
+| ↩️ 撤销重做 | 完整历史记录 | ✅ |
+| 🔍 文字识别 | Windows.Media.Ocr 本地引擎 | ✅ |
+| 🌐 翻译 | 多语言翻译（MyMemory API） | ✅ |
+| 🎬 录屏 | 屏幕录制 | 🔧 规划中 |
 
 ---
 
-## 🚀 核心亮点
-
-- ⚡ 秒级截图体验
-- 📌 类 Snipaste 的钉图能力
-- 🪶 轻量快速（Tauri v2 + Rust）
-- 🔓 开源可扩展
-
----
-
-## 📦 安装
-
-### 下载安装
-
-从 [Releases](https://github.com/2190297373/OpenSnip/releases) 下载最新版本：
-
-- **NSIS 安装包**（推荐）: `OpenSnip_x.x.x_x64-setup.exe`
-- **MSI 安装包**（标准）: `OpenSnip_x.x.x_x64_en-US.msi`
-
-### 从源码构建
-
-**环境要求：**
-- Windows 10/11 (64-bit)
-- Node.js >= 18
-- Rust >= 1.70
-- Visual Studio 2022 Build Tools（C++ 桌面开发）
-
-```bash
-# 克隆
-git clone https://github.com/2190297373/OpenSnip.git
-cd OpenSnip
-
-# 安装依赖
-npm install
-
-# 开发模式运行
-npm run tauri dev
-
-# 构建发布版本
-npm run tauri build
-```
-
----
-
-## 🛠 打包输出
-
-构建完成后，安装包位于：
+## 🎯 研发路线
 
 ```
-src-tauri/target/release/bundle/nsis/OpenSnip_x.x.x_x64-setup.exe
-src-tauri/target/release/bundle/msi/OpenSnip_x.x.x_x64_en-US.msi
+截图 ──▶ 标注 ──▶ 文字识别 ──▶ 上传 ──▶ 工作流 ──▶ 插件
+  ✅         🔧         ✅          ⬜        ⬜        ⬜
+```
+
+### 优先级 1 · 专业标注
+**这是产品的差异化优势。** 用户不会因为能截图选择你，会因为标注特别强选择你。
+
+- [ ] 图层系统
+- [ ] 智能吸附对齐
+- [ ] 精确像素控制
+- [ ] 放大镜 & 聚光灯
+- [ ] 高斯模糊
+- [ ] SVG / PDF 专业导出
+
+### 优先级 2 · OCR 引擎
+**这是产品的护城河。** 把工具变成工作流工具。
+
+- [x] 本地 OCR（Windows.Media.Ocr）
+- [ ] 中英文混排识别
+- [ ] 数学公式识别
+- [ ] 表格识别
+- [ ] 代码识别优化
+- [ ] 屏幕翻译
+
+### 优先级 3 · 上传分享
+**形成闭环。** 截图 → 标注 → 上传 → 分享。
+
+- [ ] S3、OSS、WebDAV
+- [ ] GitHub、Telegram
+- [ ] 一键分享链接
+
+### 优先级 4 · 工作流引擎
+**真正拉开差距。** 自动化整条链路。
+
+```
+截图 → 文字识别 → 翻译 → 上传 → 分享 → 通知
 ```
 
 ---
@@ -117,46 +88,38 @@ src-tauri/target/release/bundle/msi/OpenSnip_x.x.x_x64_en-US.msi
 |--------|------|
 | `Ctrl + Alt + A` | 区域截图 |
 | `Ctrl + Alt + S` | 滚动截图 |
-| `Ctrl + Alt + R` | 屏幕录制 |
+| `Ctrl + Alt + R` | 录屏 |
 | `Esc` | 取消截图 |
 | `Ctrl + Z` | 撤销 |
 | `Ctrl + Shift + Z` | 重做 |
-| `↑ ↓ ← →` | 微调选中标注 |
+| `↑ ↓ ← →` | 微调标注位置 |
 | `Delete` | 删除选中标注 |
 
 ---
 
-## 🗺 开发计划
+## 📦 从源码构建
 
-- [x] v0.1.0 — 核心截图 + 标注 + 钉图
-- [ ] v0.2.0 — OCR 文字识别
-- [ ] v0.3.0 — FFmpeg 屏幕录制
-- [ ] v0.4.0 — 滚动截图
-- [x] v1.0.0 — 稳定版发布
+**环境要求：** Windows 10/11 · Node.js ≥ 18 · Rust ≥ 1.70 · VS2022 生成工具
 
----
-
-## 📌 使用场景
-
-- 🐛 Bug 提交
-- 🎨 UI 设计反馈
-- 📚 教程制作
-- 💬 开发沟通
+```bash
+git clone https://github.com/2190297373/OpenSnip.git
+cd OpenSnip
+npm install
+npm run tauri dev      # 开发模式
+npm run tauri build    # 发布构建
+```
 
 ---
 
-## 🤝 贡献指南
+## 🏗️ 技术栈
 
-欢迎贡献代码！请阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 了解如何参与。
-
----
-
-## ⭐ 支持项目
-
-如果这个项目对你有帮助，欢迎点一个 Star ⭐
+- **框架**: [Tauri v2](https://v2.tauri.app)
+- **后端**: Rust + Windows GDI + Windows.Media.Ocr
+- **前端**: React 19 + TypeScript + Tailwind CSS
+- **构建**: Vite + Cargo
 
 ---
 
-## 📄 许可证
+## 📄 开源协议
 
-本项目采用 [MIT License](LICENSE) 开源协议。
+MIT © 2026 [2190297373](https://github.com/2190297373)

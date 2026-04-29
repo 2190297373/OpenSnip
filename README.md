@@ -5,15 +5,15 @@
 <h1 align="center">OpenSnip</h1>
 
 <p align="center">
-  Lightweight Screenshot & Annotation Tool<br/>
-  <b>Capture · Annotate · Pin</b>
+  <b>Next-gen Screenshot & Annotation Tool for Windows</b><br/>
+  Capture · Annotate · Pin · OCR
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Tauri-v2-24C8D8?logo=tauri"/>
   <img src="https://img.shields.io/github/license/2190297373/OpenSnip"/>
   <img src="https://img.shields.io/badge/platform-Windows-blue"/>
-  <img src="https://img.shields.io/github/v/release/2190297373/OpenSnip"/>
+  <img src="https://img.shields.io/badge/status-active-success"/>
 </p>
 
 <p align="center">
@@ -22,141 +22,104 @@
 
 ---
 
-## 🎬 Demo
-
-> GIF demo placeholder (recommend a 5-8 second GIF showing screenshot → annotate → pin)
-
-<p align="center">
-  <img src="assets/demo.gif" width="720" alt="Demo GIF placeholder"/>
-</p>
-
----
-
-## ✨ About
-
-OpenSnip is a lightweight desktop screenshot tool focused on speed and productivity.
-
-**Capture → Annotate → Pin → Done in seconds**
-
----
-
 ## ⚡ Features
 
 | Feature | Description | Status |
 |---------|-------------|--------|
-| 📸 Instant screenshot | Fullscreen, region, window capture | ✅ Available |
-| ✏️ Annotation tools | Rectangle, arrow, text, pencil, mosaic | ✅ Available |
-| 🎨 Style controls | Colors, line width, font size, shadows | ✅ Available |
-| 📌 Pin window | Always-on-top floating screenshot | ✅ Available |
-| 🖱 Mouse-through | Click-through when locked | ✅ Available |
-| 💾 Export & copy | Save as PNG, copy to clipboard | ✅ Available |
-| ↩️ Undo & redo | Full history support | ✅ Available |
-| 🔍 OCR | Extract text from screenshots (Windows.Media.Ocr) | 🔧 Implemented |
-| 🌐 Translation | Multi-language translation (MyMemory API) | ✅ Available |
-| 🎬 Recording | Screen recording | 🔧 Coming Soon |
+| 📸 Screenshot | Fullscreen, region, window capture | ✅ |
+| ✏️ Annotation | Rectangle, arrow, text, pencil, mosaic | ✅ |
+| 🎨 Style Controls | Colors, line width, font size, shadows | ✅ |
+| 📌 Pin Window | Always-on-top floating screenshot | ✅ |
+| 🖱️ Mouse-through | Click-through when locked | ✅ |
+| 💾 Export & Copy | Save as PNG, copy to clipboard | ✅ |
+| ↩️ Undo & Redo | Full history support | ✅ |
+| 🔍 OCR | Real-time text extraction (Windows.Media.Ocr) | ✅ |
+| 🌐 Translation | Multi-language (MyMemory API) | ✅ |
+| 🎬 Recording | Screen recording | 🔧 Planned |
 
 ---
 
-## 🚀 Highlights
-
-- ⚡ Instant capture workflow
-- 📌 Pin window workflow inspired by Snipaste
-- 🪶 Lightweight & fast (Tauri v2 + Rust)
-- 🔓 Open-source & extensible
-
----
-
-## 📦 Installation
-
-### Download
-
-Download the latest release from [Releases](https://github.com/2190297373/OpenSnip/releases):
-
-- **NSIS Installer** (Recommended): `OpenSnip_x.x.x_x64-setup.exe`
-- **MSI Installer** (Standard): `OpenSnip_x.x.x_x64_en-US.msi`
-
-### Build from source
-
-**Requirements:**
-- Windows 10/11 (64-bit)
-- Node.js >= 18
-- Rust >= 1.70
-- Visual Studio 2022 Build Tools (C++ desktop development)
-
-```bash
-# Clone
-git clone https://github.com/2190297373/OpenSnip.git
-cd OpenSnip
-
-# Install dependencies
-npm install
-
-# Run in dev mode
-npm run tauri dev
-
-# Build release
-npm run tauri build
-```
-
----
-
-## 🛠 Build Output
-
-After building, the installer is located at:
+## 🎯 Roadmap
 
 ```
-src-tauri/target/release/bundle/nsis/OpenSnip_x.x.x_x64-setup.exe
-src-tauri/target/release/bundle/msi/OpenSnip_x.x.x_x64_en-US.msi
+Capture ──▶ Annotation ──▶ OCR ──▶ Upload ──▶ Workflow ──▶ Plugin
+   ✅            🔧            ✅        ⬜         ⬜          ⬜
+```
+
+### Priority 1 · Annotation Pro
+**The differentiator.** Users don't pick a tool because it can screenshot — they pick it because annotations are exceptional.
+
+- [ ] Layer system
+- [ ] Smart snapping & alignment guides
+- [ ] Pixel-precise controls
+- [ ] Magnifier & spotlight
+- [ ] Gaussian blur
+- [ ] Professional export (SVG, PDF)
+
+### Priority 2 · OCR Engine
+**The moat.** Turns a tool into a workflow tool.
+
+- [x] Local OCR (Windows.Media.Ocr)
+- [ ] Chinese/English mixed recognition
+- [ ] Math formula recognition
+- [ ] Table recognition
+- [ ] Code recognition optimization
+- [ ] Screen translation
+
+### Priority 3 · Upload & Share
+**Close the loop.** Screenshot → Annotate → Upload → Share.
+
+- [ ] S3, OSS, WebDAV
+- [ ] GitHub, Telegram
+- [ ] One-click share links
+
+### Priority 4 · Workflow Engine
+**The real advantage.** Automate the pipeline.
+
+```
+Screenshot → OCR → Translate → Upload → Share → Notify
 ```
 
 ---
 
 ## ⌨️ Shortcuts
 
-| Shortcut | Function |
-|----------|----------|
+| Shortcut | Action |
+|----------|--------|
 | `Ctrl + Alt + A` | Region screenshot |
-| `Ctrl + Alt + S` | Scroll screenshot |
-| `Ctrl + Alt + R` | Screen recording |
+| `Ctrl + Alt + S` | Scroll capture |
+| `Ctrl + Alt + R` | Recording |
 | `Esc` | Cancel capture |
 | `Ctrl + Z` | Undo |
 | `Ctrl + Shift + Z` | Redo |
-| `↑ ↓ ← →` | Nudge selected annotation |
-| `Delete` | Delete selected annotation |
+| `↑ ↓ ← →` | Nudge annotation |
+| `Delete` | Delete annotation |
 
 ---
 
-## 🗺 Roadmap
+## 📦 Build from Source
 
-- [x] v0.1.0 — Core screenshot + annotation + pin
-- [ ] v0.2.0 — OCR with Windows.Media.Ocr
-- [ ] v0.3.0 — Screen recording with FFmpeg
-- [ ] v0.4.0 — Scroll capture
-- [x] v1.0.0 — Stable release with installer
+**Requirements:** Windows 10/11 · Node.js ≥ 18 · Rust ≥ 1.70 · VS2022 Build Tools
 
----
-
-## 📌 Use Cases
-
-- 🐛 Bug reporting
-- 🎨 UI review
-- 📚 Tutorials
-- 💬 Dev communication
+```bash
+git clone https://github.com/2190297373/OpenSnip.git
+cd OpenSnip
+npm install
+npm run tauri dev      # dev mode
+npm run tauri build    # release build
+```
 
 ---
 
-## 🤝 Contributing
+## 🏗️ Tech Stack
 
-We welcome contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details.
-
----
-
-## ⭐ Support
-
-If you like this project, please consider giving it a star!
+- **Framework**: [Tauri v2](https://v2.tauri.app)
+- **Backend**: Rust + Windows GDI + Windows.Media.Ocr
+- **Frontend**: React 19 + TypeScript + Tailwind CSS
+- **Build**: Vite + Cargo
 
 ---
 
 ## 📄 License
 
-This project is licensed under the [MIT License](LICENSE).
+MIT © 2026 [2190297373](https://github.com/2190297373)
