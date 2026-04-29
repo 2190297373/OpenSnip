@@ -60,7 +60,7 @@ export function LayerPanel() {
     } as any);
   };
 
-  const onDragStart = (e: React.DragEvent, id: string, index: number) => {
+  const onDragStart = (e: React.DragEvent, id: string, _index: number) => {
     e.dataTransfer.setData("text/plain", id);
     setDrag({ fromId: id, overIndex: null });
   };

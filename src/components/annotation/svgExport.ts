@@ -5,7 +5,7 @@
  * Note: pencil, highlighter, mosaic, blur, spotlight are raster-only (excluded)
  */
 
-import type { Annotation, Point } from "./CanvasContext";
+import type { Annotation } from "./CanvasContext";
 
 interface ExportOptions {
   backgroundImage?: string; // base64 data URL

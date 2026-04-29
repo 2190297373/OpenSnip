@@ -107,7 +107,7 @@ export function computeSnap(
           bestSnap = { prop: check.prop, value: check.otherVal, dist };
         }
 
-        const dy = check.otherVal - check.movingTop;
+        const dy = check.otherVal - check.movingVal;
         snapped.y += dy;
         break;
       }

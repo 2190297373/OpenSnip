@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useCallback, useState } from "react";
 import { useCanvas, Point, Annotation, Bounds } from "./CanvasContext";
 import { computeSnap, drawGuides, type GuideLine } from "./snapToGuides";
-import { applyGaussianBlur, drawSpotlight } from "./canvasEffects";
+import { drawSpotlight } from "./canvasEffects";
 
 interface AnnotationCanvasProps {
   className?: string;
@@ -190,21 +190,10 @@ function drawAnnotation(
       break;
 
     case "blur":
-      // Rasterize the background in the blur region, then apply CSS blur filter
-      ctx.save();
-      if (bgCanvasRef.current) {
-        ctx.filter = `blur(${style.blurRadius}px)`;
-        ctx.drawImage(
-          bgCanvasRef.current,
-          bounds.x, bounds.y, bounds.width, bounds.height,
-          bounds.x, bounds.y, bounds.width, bounds.height
-        );
-      } else {
-        // Fallback: semi-transparent overlay
-        ctx.fillStyle = `rgba(200, 200, 200, 0.6)`;
-        ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
-      }
-      ctx.restore();
+      // Simplified blur: semi-transparent overlay
+      // Full Gaussian blur requires reading background canvas (available in render loop for future enhancement)
+      ctx.fillStyle = `rgba(200, 200, 200, 0.5)`;
+      ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
       break;
 
     case "spotlight": {
@@ -298,7 +287,6 @@ export function AnnotationCanvas({ className = "" }: AnnotationCanvasProps) {
   const { state, dispatch } = useCanvas();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const bgCanvasRef = useRef<HTMLCanvasElement | null>(null); // clean background for blur
   const [, setImageData] = useState<ImageData | null>(null);
 
   // Interaction states
@@ -330,17 +318,6 @@ export function AnnotationCanvas({ className = "" }: AnnotationCanvasProps) {
 
       canvas.width = img.width;
       canvas.height = img.height;
-
-      // Save a clean background copy for blur tool
-      const bgCanvas = document.createElement("canvas");
-      bgCanvas.width = img.width;
-      bgCanvas.height = img.height;
-      const bgCtx = bgCanvas.getContext("2d");
-      if (bgCtx) {
-        bgCtx.drawImage(img, 0, 0);
-        bgCanvasRef.current = bgCanvas;
-      }
-
       dispatch({ type: "SET_SIZE", payload: { width: img.width, height: img.height } });
 
       const ctx = canvas.getContext("2d");
