@@ -13,7 +13,7 @@ use windows::Win32::Graphics::Gdi::{
 
 impl ScreenshotService {
     pub fn new() -> Self {
-        Self
+        Self {}
     }
 
     #[cfg(windows)]
@@ -109,7 +109,6 @@ impl ScreenshotService {
                 x as i32,
                 y as i32,
                 SRCCOPY,
-                Default::default(),
             ).map_err(|e| format!("BitBlt failed: {}", e))?;
             
             let size = (width * height * 4) as usize;

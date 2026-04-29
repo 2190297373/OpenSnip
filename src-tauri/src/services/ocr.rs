@@ -46,9 +46,9 @@ impl OcrService {
         // 2. Create IBuffer via DataWriter (clean, no unsafe ptr)
         let writer = DataWriter::new()
             .map_err(|e| format!("OCR: DataWriter create failed: {}", e))?;
-        writer.WriteBytes(&raw_pixels)
+        writer.write_bytes(&raw_pixels)
             .map_err(|e| format!("OCR: buffer write failed: {}", e))?;
-        let buffer = writer.DetachBuffer()
+        let buffer = writer.detach_buffer()
             .map_err(|e| format!("OCR: buffer detach failed: {}", e))?;
 
         // 3. Create SoftwareBitmap from buffer (4 args per windows-rs 0.58 convention)
@@ -73,7 +73,7 @@ impl OcrService {
         let mut engine = None;
 
         for tag in &tags_to_try {
-            let lang = Language::CreateLanguage(&HSTRING::from(*tag));
+            let lang = Language::create_language(&HSTRING::from(*tag));
             match lang {
                 Ok(l) => {
                     match WinOcrEngine::TryCreateFromLanguage(&l) {
@@ -92,9 +92,9 @@ impl OcrService {
         let engine = engine
             .ok_or_else(|| "OCR: no language pack available. Install a language pack in Windows Settings.".to_string())?;
 
-        // 5. Run recognition (async â†’ sync blocking call)
+        // 5. Run recognition (async â†?sync blocking call)
         let win_result = engine
-            .RecognizeAsync(&bitmap)
+            .recognize_async(&bitmap)
             .map_err(|e| format!("OCR: recognize async failed: {}", e))?
             .get()
             .map_err(|e| format!("OCR: get result failed: {}", e))?;
@@ -102,11 +102,11 @@ impl OcrService {
         // 6. Parse lines into our OcrResult
         let mut full_text = String::new();
         let mut blocks = Vec::new();
-        let lines = win_result.Lines();
+        let lines = win_result.lines();
 
         for line in lines.into_iter() {
             let text = line
-                .Text()
+                .text()
                 .map_err(|e| format!("OCR: line text read failed: {}", e))?
                 .to_string();
 
@@ -118,7 +118,7 @@ impl OcrService {
             full_text.push('\n');
 
             // Extract bounding box from words
-            let words = line.Words();
+            let words = line.words();
             let (bx, by, bw, bh) = if !words.is_empty() {
                 let mut min_x = i32::MAX;
                 let mut min_y = i32::MAX;
@@ -126,11 +126,11 @@ impl OcrService {
                 let mut max_y = 0i32;
 
                 for word in words.into_iter() {
-                    if let Ok(rect) = word.BoundingRect() {
-                        min_x = min_x.min(rect.X);
-                        min_y = min_y.min(rect.Y);
-                        max_x = max_x.max(rect.X + rect.Width);
-                        max_y = max_y.max(rect.Y + rect.Height);
+                    if let Ok(rect) = word.bounding_rect() {
+                        min_x = min_x.min(rect.x);
+                        min_y = min_y.min(rect.y);
+                        max_x = max_x.max(rect.x + rect.width);
+                        max_y = max_y.max(rect.y + rect.height);
                     }
                 }
 

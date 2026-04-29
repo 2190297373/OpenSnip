@@ -46,10 +46,11 @@ impl TranslationService {
             .call()
             .map_err(|e| format!("MyMemory API request failed: {}", e))?;
 
-        let json: serde_json::Value = response
-            .into_body()
-            .read_json()
-            .map_err(|e| format!("Failed to parse response: {}", e))?;
+        let body = response
+            .into_string()
+            .map_err(|e| format!("Failed to read response: {}", e))?;
+        let json: serde_json::Value = serde_json::from_str(&body)
+            .map_err(|e| format!("Failed to parse JSON: {}", e))?;
 
         let translated_text = json["responseData"]["translatedText"]
             .as_str()
