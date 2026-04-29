@@ -13,7 +13,7 @@ use windows::Win32::Graphics::Gdi::{
 
 impl ScreenshotService {
     pub fn new() -> Self {
-        Self {}
+        ScreenshotService
     }
 
     #[cfg(windows)]
