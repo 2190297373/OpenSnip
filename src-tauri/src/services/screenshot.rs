@@ -99,7 +99,7 @@ impl ScreenshotService {
                 return Err("Failed to create DIB section".to_string());
             }
             
-            let old_bitmap = windows::Win32::Graphics::Gdi::SelectObject(mem_hdc, hbitmap.unwrap().into());
+            let old_bitmap = windows::Win32::Graphics::Gdi::SelectObject(mem_hdc, windows::Win32::Graphics::Gdi::HGDIOBJ(hbitmap.unwrap().0));
             
             BitBlt(
                 mem_hdc,
