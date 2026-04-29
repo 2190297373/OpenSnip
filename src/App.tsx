@@ -3,7 +3,7 @@ import './i18n/i18n';
 import { Button, Modal, Tooltip, ToastProvider } from "./components/ui";
 import { Toolbar, Sidebar, Settings } from "./components/layout";
 import { SelectionOverlay, type SelectionRegion } from "./components/capture";
-import { CanvasProvider, useCanvas, AnnotationCanvas, AnnotationToolbar } from "./components/annotation";
+import { CanvasProvider, useCanvas, AnnotationCanvas, AnnotationToolbar, LayerPanel } from "./components/annotation";
 import { PinManager, createPinWindow, PinPage } from "./components/pin";
 import { OcrPanel } from "./components/ocr";
 import { TranslationPanel } from "./components/translation";
@@ -78,16 +78,19 @@ function AnnotateView({
       <AnnotationToolbar />
       
       {/* 标注画布 - 使用 CanvasContext */}
-      <div className="flex-1 overflow-auto p-4 bg-[var(--color-surface)]">
-        {capturedImage ? (
-          <div className="flex items-center justify-center min-h-full">
-            <AnnotationCanvas className="max-w-full max-h-full" />
-          </div>
-        ) : (
-          <div className="flex items-center justify-center h-full text-[var(--color-text-muted)]">
-            暂无截图，请先截图
-          </div>
-        )}
+      <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 overflow-auto bg-[var(--color-surface)]">
+          {capturedImage ? (
+            <div className="flex items-center justify-center min-h-full">
+              <AnnotationCanvas className="max-w-full max-h-full" />
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-full text-[var(--color-text-muted)]">
+              暂无截图，请先截图
+            </div>
+          )}
+        </div>
+        <LayerPanel />
       </div>
       
       {/* 底部操作栏 */}

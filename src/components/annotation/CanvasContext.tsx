@@ -56,7 +56,7 @@ export interface Annotation {
 
 // Canvas state
 export interface CanvasState {
-  image: string | null; // Base64 image data
+  image: string | null;
   annotations: Annotation[];
   selectedId: string | null;
   tool: ToolType;
@@ -68,6 +68,18 @@ export interface CanvasState {
   historyIndex: number;
   canvasWidth: number;
   canvasHeight: number;
+  // Layer system
+  layers: LayerData[];
+  currentLayerId: string;
+}
+
+interface LayerData {
+  id: string;
+  name: string;
+  visible: boolean;
+  locked: boolean;
+  annotations: Annotation[];
+  opacity: number;
 }
 
 // Actions
@@ -85,7 +97,16 @@ type Action =
   | { type: "CLEAR_ALL" }
   | { type: "UNDO" }
   | { type: "REDO" }
-  | { type: "SET_SIZE"; payload: { width: number; height: number } };
+  | { type: "SET_SIZE"; payload: { width: number; height: number } }
+  // Layer actions
+  | { type: "ADD_LAYER"; payload: { id: string; name: string } }
+  | { type: "DELETE_LAYER"; payload: string }
+  | { type: "REORDER_LAYER"; payload: { fromIndex: number; toIndex: number } }
+  | { type: "SET_CURRENT_LAYER"; payload: string }
+  | { type: "TOGGLE_LAYER_VISIBILITY"; payload: string }
+  | { type: "TOGGLE_LAYER_LOCK"; payload: string }
+  | { type: "SET_LAYER_OPACITY"; payload: { layerId: string; opacity: number } }
+  | { type: "RENAME_LAYER"; payload: { layerId: string; name: string } };
 
 // Default style
 const defaultStyle: AnnotationStyle = {
@@ -99,6 +120,8 @@ const defaultStyle: AnnotationStyle = {
   blurRadius: 10,
   mosaicSize: 8,
 };
+
+const DEFAULT_LAYER_ID = "default";
 
 // Initial state
 const initialState: CanvasState = {
@@ -114,6 +137,10 @@ const initialState: CanvasState = {
   historyIndex: -1,
   canvasWidth: 1920,
   canvasHeight: 1080,
+  layers: [
+    { id: DEFAULT_LAYER_ID, name: "默认图层", visible: true, locked: false, annotations: [], opacity: 1 }
+  ],
+  currentLayerId: DEFAULT_LAYER_ID,
 };
 
 // Generate unique ID
@@ -212,6 +239,12 @@ function canvasReducer(state: CanvasState, action: Action): CanvasState {
         isDrawing: false,
         currentPoints: [],
         annotations: [...state.annotations, annotation],
+        // Also store in current layer
+        layers: state.layers.map(l =>
+          l.id === state.currentLayerId
+            ? { ...l, annotations: [...l.annotations, annotation] }
+            : l
+        ),
         history: newHistory,
         historyIndex: newHistory.length - 1,
         nextNumber: tool === "numbering" ? nextNumber + 1 : nextNumber,
@@ -224,6 +257,11 @@ function canvasReducer(state: CanvasState, action: Action): CanvasState {
       return {
         ...state,
         annotations: [...state.annotations, action.payload],
+        layers: state.layers.map(l =>
+          l.id === state.currentLayerId
+            ? { ...l, annotations: [...l.annotations, action.payload] }
+            : l
+        ),
         history: newHistory,
         historyIndex: newHistory.length - 1,
       };
@@ -243,6 +281,11 @@ function canvasReducer(state: CanvasState, action: Action): CanvasState {
       return {
         ...state,
         annotations: state.annotations.filter((a) => a.id !== action.payload),
+        layers: state.layers.map(l =>
+          l.id === state.currentLayerId
+            ? { ...l, annotations: l.annotations.filter(a => a.id !== action.payload) }
+            : l
+        ),
         selectedId: state.selectedId === action.payload ? null : state.selectedId,
         history: newHistory,
         historyIndex: newHistory.length - 1,
@@ -258,6 +301,9 @@ function canvasReducer(state: CanvasState, action: Action): CanvasState {
       return {
         ...state,
         annotations: [],
+        layers: state.layers.map(l =>
+          l.id === state.currentLayerId ? { ...l, annotations: [] } : l
+        ),
         selectedId: null,
         nextNumber: 1,
         history: newHistory,
@@ -270,6 +316,11 @@ function canvasReducer(state: CanvasState, action: Action): CanvasState {
       return {
         ...state,
         annotations: state.history[state.historyIndex],
+        layers: state.layers.map(l =>
+          l.id === state.currentLayerId
+            ? { ...l, annotations: [...state.history[state.historyIndex]] }
+            : l
+        ),
         historyIndex: state.historyIndex - 1,
       };
 
@@ -278,6 +329,11 @@ function canvasReducer(state: CanvasState, action: Action): CanvasState {
       return {
         ...state,
         annotations: state.history[state.historyIndex + 1],
+        layers: state.layers.map(l =>
+          l.id === state.currentLayerId
+            ? { ...l, annotations: [...state.history[state.historyIndex + 1]] }
+            : l
+        ),
         historyIndex: state.historyIndex + 1,
       };
 
@@ -287,6 +343,75 @@ function canvasReducer(state: CanvasState, action: Action): CanvasState {
         canvasWidth: action.payload.width,
         canvasHeight: action.payload.height,
       };
+
+    // --- Layer actions ---
+    case "ADD_LAYER": {
+      const layer: LayerData = {
+        id: action.payload.id,
+        name: action.payload.name,
+        visible: true,
+        locked: false,
+        annotations: [],
+        opacity: 1,
+      };
+      return { ...state, layers: [...state.layers, layer] };
+    }
+    case "DELETE_LAYER": {
+      if (state.layers.length <= 1) return state;
+      const newLayers = state.layers.filter(l => l.id !== action.payload);
+      const newCurrentId = state.currentLayerId === action.payload
+        ? (newLayers[newLayers.length - 1]?.id ?? DEFAULT_LAYER_ID)
+        : state.currentLayerId;
+      return { ...state, layers: newLayers, currentLayerId: newCurrentId };
+    }
+    case "REORDER_LAYER": {
+      const { fromIndex, toIndex } = action.payload;
+      const layers = [...state.layers];
+      const [moved] = layers.splice(fromIndex, 1);
+      layers.splice(toIndex, 0, moved);
+      return { ...state, layers };
+    }
+    case "SET_CURRENT_LAYER": {
+      // Save current annotations to current layer before switching
+      const savedLayers = state.layers.map(l =>
+        l.id === state.currentLayerId
+          ? { ...l, annotations: [...state.annotations] }
+          : l
+      );
+      // Load target layer's annotations into state.annotations
+      const target = savedLayers.find(l => l.id === action.payload);
+      return {
+        ...state,
+        currentLayerId: action.payload,
+        layers: savedLayers,
+        annotations: target ? [...target.annotations] : [],
+        selectedId: null,
+      };
+    }
+    case "TOGGLE_LAYER_VISIBILITY": {
+      const layers = state.layers.map(l =>
+        l.id === action.payload ? { ...l, visible: !l.visible } : l
+      );
+      return { ...state, layers };
+    }
+    case "TOGGLE_LAYER_LOCK": {
+      const layers = state.layers.map(l =>
+        l.id === action.payload ? { ...l, locked: !l.locked } : l
+      );
+      return { ...state, layers };
+    }
+    case "SET_LAYER_OPACITY": {
+      const layers = state.layers.map(l =>
+        l.id === action.payload.layerId ? { ...l, opacity: action.payload.opacity } : l
+      );
+      return { ...state, layers };
+    }
+    case "RENAME_LAYER": {
+      const layers = state.layers.map(l =>
+        l.id === action.payload.layerId ? { ...l, name: action.payload.name } : l
+      );
+      return { ...state, layers };
+    }
 
     default:
       return state;

@@ -325,9 +325,24 @@ export function AnnotationCanvas({ className = "" }: AnnotationCanvasProps) {
       ctx.drawImage(img, 0, 0);
     }
 
-    // Draw annotations
-    for (const annotation of state.annotations) {
-      drawAnnotation(ctx, annotation, annotation.id === state.selectedId);
+    // Draw annotations from all visible layers (bottom to top)
+    const layers = (state as any).layers;
+    if (layers && layers.length > 0) {
+      ctx.save();
+      for (const layer of layers) {
+        if (!layer.visible) continue;
+        ctx.globalAlpha = layer.opacity ?? 1;
+        const isCurrentLayer = layer.id === (state as any).currentLayerId;
+        for (const annotation of layer.annotations) {
+          drawAnnotation(ctx, annotation, annotation.id === state.selectedId && isCurrentLayer);
+        }
+      }
+      ctx.restore();
+    } else {
+      // Fallback for backward compatibility
+      for (const annotation of state.annotations) {
+        drawAnnotation(ctx, annotation, annotation.id === state.selectedId);
+      }
     }
 
     // Draw marquee selection box
