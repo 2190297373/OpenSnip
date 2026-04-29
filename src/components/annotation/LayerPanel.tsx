@@ -1,14 +1,7 @@
-import { useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState } from "react";
 import { useCanvas } from "./CanvasContext";
-
-interface LayerData {
-  id: string;
-  name: string;
-  visible: boolean;
-  locked: boolean;
-  annotations: unknown[];
-  opacity: number;
-}
+import type { Layer } from "../../types/layer";
 
 interface DragState {
   fromId: string | null;
@@ -17,7 +10,9 @@ interface DragState {
 
 export function LayerPanel() {
   const { state, dispatch } = useCanvas();
-  const layers: LayerData[] = (state as any).layers ?? [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const layers: Layer[] = (state as any).layers ?? [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const currentLayerId = (state as any).currentLayerId ?? "default";
 
   const [drag, setDrag] = useState<DragState>({ fromId: null, overIndex: null });

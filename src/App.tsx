@@ -63,7 +63,9 @@ function AnnotateView({
   // SVG 导出
   const handleSvgExport = useCallback(() => {
     // Collect all annotations from all visible layers
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const layers = (state as any).layers;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let allAnnotations: any[] = [];
     if (layers && layers.length > 0) {
       for (const layer of layers) {

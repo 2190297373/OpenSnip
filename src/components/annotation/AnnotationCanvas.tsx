@@ -348,6 +348,7 @@ export function AnnotationCanvas({ className = "" }: AnnotationCanvasProps) {
     // Draw annotations from all visible layers (bottom to top)
     // Pass 1: background effects (spotlight, blur)
     // Pass 2: regular annotations on top
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const layers = (state as any).layers;
     if (layers && layers.length > 0) {
       ctx.save();
@@ -365,6 +366,7 @@ export function AnnotationCanvas({ className = "" }: AnnotationCanvasProps) {
       for (const layer of layers) {
         if (!layer.visible) continue;
         ctx.globalAlpha = layer.opacity ?? 1;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const isCurrentLayer = layer.id === (state as any).currentLayerId;
         const regular = layer.annotations.filter(
           (a: Annotation) => a.toolType !== "spotlight" && a.toolType !== "blur"
