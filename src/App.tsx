@@ -4,6 +4,7 @@ import { Button, Modal, Tooltip, ToastProvider } from "./components/ui";
 import { Toolbar, Sidebar, Settings } from "./components/layout";
 import { SelectionOverlay, type SelectionRegion } from "./components/capture";
 import { CanvasProvider, useCanvas, AnnotationCanvas, AnnotationToolbar, LayerPanel } from "./components/annotation";
+import { annotationsToSvg, downloadSvg } from "./components/annotation/svgExport";
 import { PinManager, createPinWindow, PinPage } from "./components/pin";
 import { OcrPanel } from "./components/ocr";
 import { TranslationPanel } from "./components/translation";
@@ -56,8 +57,31 @@ function AnnotateView({
   onSaveToFile: () => void;
   onPin: () => void;
 }) {
-  const { dispatch } = useCanvas();
+  const { state, dispatch } = useCanvas();
   const initializedRef = useRef(false);
+
+  // SVG 导出
+  const handleSvgExport = useCallback(() => {
+    // Collect all annotations from all visible layers
+    const layers = (state as any).layers;
+    let allAnnotations: any[] = [];
+    if (layers && layers.length > 0) {
+      for (const layer of layers) {
+        if (layer.visible) {
+          allAnnotations = allAnnotations.concat(layer.annotations);
+        }
+      }
+    } else {
+      allAnnotations = state.annotations;
+    }
+
+    const svg = annotationsToSvg(allAnnotations, {
+      backgroundImage: capturedImage?.dataUrl,
+      width: state.canvasWidth,
+      height: state.canvasHeight,
+    });
+    downloadSvg(svg);
+  }, [state, capturedImage]);
 
   // 当截图变化时，更新 CanvasContext 的 image
   useEffect(() => {
@@ -100,6 +124,7 @@ function AnnotateView({
         </div>
         <div className="flex gap-2">
           <Button size="sm" variant="secondary" onClick={onPin}>📌 钉图</Button>
+          <Button size="sm" variant="secondary" onClick={handleSvgExport}>SVG 导出</Button>
           <Button size="sm" variant="secondary" onClick={onSaveToFile}>保存</Button>
         </div>
       </div>
