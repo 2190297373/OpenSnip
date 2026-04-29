@@ -122,4 +122,4 @@ npm run tauri build    # release build
 
 ## 📄 License
 
-MIT License © 2026 FuSheng-MG
+[MIT License](LICENSE)
