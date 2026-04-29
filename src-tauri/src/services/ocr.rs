@@ -92,7 +92,7 @@ impl OcrService {
         let engine = engine
             .ok_or_else(|| "OCR: no language pack available. Install a language pack in Windows Settings.".to_string())?;
 
-        // 5. Run recognition (async â†?sync blocking call)
+        // 5. Run recognition (async to sync blocking call) ï¿½?sync blocking call)
         let win_result = engine
             .recognize_async(&bitmap)
             .map_err(|e| format!("OCR: recognize async failed: {}", e))?
