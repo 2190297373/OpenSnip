@@ -1,3 +1,5 @@
+> This is an AI-assisted development test project. | 这是通过AI实现的一个测试项目。
+
 <p align="center">
   <img src="assets/banner.png" width="100%"/>
 </p>
