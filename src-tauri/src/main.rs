@@ -1,28 +1,18 @@
 //! OpenSnip - Main entry point
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use opensnip_lib::commands::{
-    clipboard::{read_clipboard, read_clipboard_text, write_clipboard, write_clipboard_text, ClipboardState},
-    ocr::{get_ocr_config, perform_ocr, update_ocr_config, OcrState},
-    recording::{get_recording_config, get_recording_stats, get_recording_status, pause_recording, resume_recording, start_recording, stop_recording, RecordingState},
-    screenshot::{capture_as_png, capture_region, capture_screenshot, capture_with_args, get_monitors, quick_capture, save_screenshot, ScreenshotState},
-    translation::{get_supported_languages, set_translation_engine, translate_text, TranslationState},
-    pin::{
-        bring_pin_to_front, clear_all_pins, create_image_pin, create_text_pin, 
-        delete_pin, get_pins, toggle_pin_lock, toggle_pin_minimize, update_pin_position, PinState,
-    },
-};
+use opensnip_lib::commands::*;
 use opensnip_lib::plugins::{hotkey, tray};
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 use tauri_plugin_global_shortcut::ShortcutState;
 
 fn main() {
-    env_logger::Builder::from_env(env_logger::Env::default().filter_or("info")).init();
+    env_logger::Builder::from_env(env_logger::Env::default().filter_or("RUST_LOG", "info")).init();
     log::info!("Starting OpenSnip v{}", env!("CARGO_PKG_VERSION"));
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_store::init())
+        .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_global_shortcut::Builder::new().with_handler(|app, shortcut, event| {
             if event.state == ShortcutState::Pressed {
                 let key = shortcut.to_string().to_lowercase();

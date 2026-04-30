@@ -1,7 +1,7 @@
 //! Translation service
 
 use crate::models::translation::{
-    Language, TranslationEngine, TranslationRequest, TranslationResult,
+    TranslationEngine, TranslationRequest, TranslationResult,
 };
 use std::time::Instant;
 

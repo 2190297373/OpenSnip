@@ -27,7 +27,7 @@ impl ScreenshotService {
 
         log::info!("Screenshot captured: {}x{} in {:?}", width, height, start.elapsed());
 
-        Ok(Screenshot::new(Vec::from(buffer.as_ref()), width, height, CaptureRegion::new(0, 0, width, height)))
+        Ok(Screenshot::new(buffer, width, height, CaptureRegion::new(0, 0, width, height)))
     }
 
     pub fn capture_region(&self, region: &CaptureRegion) -> Result<Screenshot, String> {

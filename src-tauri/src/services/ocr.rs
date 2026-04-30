@@ -1,6 +1,6 @@
 //! OCR service
 
-use crate::models::ocr::{OcrConfig, OcrLanguage, OcrResult, OcrTextBlock, OcrEngine, BoundingBox};
+use crate::models::ocr::{OcrConfig, OcrLanguage, OcrResult, OcrEngine};
 use std::time::Instant;
 
 use windows::core::HSTRING;
