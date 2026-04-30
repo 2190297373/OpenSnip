@@ -3,7 +3,7 @@
 use crate::models::screenshot::{
     CaptureArgs, CaptureMode, CaptureRegion, MonitorInfo, Screenshot, WindowInfo,
 };
-use screenshots::Screen;
+use screenshots::{Compression, Screen};
 use std::time::Instant;
 
 #[cfg(not(windows))]
@@ -21,7 +21,7 @@ impl ScreenshotService {
         let screens = Screen::all().map_err(|e| format!("Failed to enumerate screens: {}", e))?;
         let screen = screens.first().ok_or("No screen found".to_string())?;
         let image = screen.capture().map_err(|e| format!("Failed to capture screen: {}", e))?;
-        let buffer = image.to_png(None).map_err(|e| format!("Failed to convert to PNG: {}", e))?;
+        let buffer = image.to_png(Compression::Fast).map_err(|e| format!("Failed to convert to PNG: {}", e))?;
         let width = image.width() as u32;
         let height = image.height() as u32;
 
@@ -34,7 +34,7 @@ impl ScreenshotService {
         let screens = Screen::all().map_err(|e| format!("Failed to enumerate screens: {}", e))?;
         let screen = screens.first().ok_or("No screen found".to_string())?;
         let image = screen.capture().map_err(|e| format!("Failed to capture screen: {}", e))?;
-        let buffer = image.to_png(None).map_err(|e| format!("Failed to convert to PNG: {}", e))?;
+        let buffer = image.to_png(Compression::Fast).map_err(|e| format!("Failed to convert to PNG: {}", e))?;
 
         // Crop to region using image crate
         let img = image::load_from_memory(&buffer)
