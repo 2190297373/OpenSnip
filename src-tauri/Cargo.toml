@@ -23,7 +23,7 @@ thiserror = "1"
 image = { version = "0.25", default-features = false, features = ["png"] }
 chrono = "0.4"
 dirs = "5"
-screenshots = "0.8"
+screenshots = "=0.7.2"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.58", features = [
@@ -32,6 +32,7 @@ windows = { version = "0.58", features = [
     "Win32_UI_WindowsAndMessaging",
     "Media_Ocr",
     "Graphics_Imaging",
+    "Storage",
     "Storage_Streams",
     "Globalization",
 ] }
