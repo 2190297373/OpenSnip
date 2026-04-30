@@ -93,14 +93,22 @@ impl ScreenshotService {
                 0,
             );
             
-            if hbitmap.is_err() || bits.is_null() {
+            let hbmp = match hbitmap {
+                Ok(h) => h,
+                Err(_) => {
+                    DeleteDC(mem_hdc);
+                    ReleaseDC(None, src_hdc);
+                    return Err("Failed to create DIB section".to_string());
+                }
+            };
+
+            if bits.is_null() {
                 DeleteDC(mem_hdc);
                 ReleaseDC(None, src_hdc);
                 return Err("Failed to create DIB section".to_string());
             }
             
-            let hbmp: windows::Win32::Graphics::Gdi::HBITMAP = hbitmap.unwrap();
-            let old_bitmap = windows::Win32::Graphics::Gdi::SelectObject(mem_hdc, hbmp.into());
+            let old_bitmap = windows::Win32::Graphics::Gdi::SelectObject(mem_hdc, hbmp);
             
             BitBlt(
                 mem_hdc,
