@@ -1,4 +1,3 @@
-export { useCapture } from "./useCapture";
 export { useTheme, useThemeSync } from "./useTheme";
 export { useDebounce } from "./useDebounce";
 export { useCaptureHistory, useCaptureHistorySync } from "./useCaptureHistory";
