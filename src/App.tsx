@@ -273,6 +273,17 @@ function AppContent() {
       
       setCapturedImage(newCapture);
       setMainView("annotate");
+      
+      // 自动复制到剪贴板
+      try {
+        const response = await fetch(newCapture.dataUrl);
+        const blob = await response.blob();
+        await navigator.clipboard.write([
+          new ClipboardItem({ [blob.type]: blob })
+        ]);
+      } catch (clipErr) {
+        console.warn("Auto-copy to clipboard failed:", clipErr);
+      }
     } catch (err) {
       console.error("截图失败:", err);
       // 降级：创建空白画布
