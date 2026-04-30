@@ -35,8 +35,8 @@ impl ScreenshotService {
         let screen = screens.first().ok_or("No screen found".to_string())?;
         let image = screen.capture().map_err(|e| format!("Failed to capture screen: {}", e))?;
         let buffer = image.to_png(None).map_err(|e| format!("Failed to convert to PNG: {}", e))?;
-        
-        // Crop to region
+
+        // Crop to region using image crate
         let img = image::load_from_memory(&buffer)
             .map_err(|e| format!("Failed to decode PNG: {}", e))?;
         let cropped = img.crop_imm(
@@ -47,12 +47,9 @@ impl ScreenshotService {
         );
 
         let mut png_buf = Vec::new();
-        let encoder = image::codecs::png::PngEncoder::new(&mut png_buf);
-        encoder.write_image(
-            cropped.as_bytes(),
-            cropped.width(),
-            cropped.height(),
-            cropped.color(),
+        cropped.write_to(
+            &mut std::io::Cursor::new(&mut png_buf),
+            image::ImageFormat::Png,
         ).map_err(|e| format!("PNG encode error: {}", e))?;
 
         Ok(Screenshot::new(
