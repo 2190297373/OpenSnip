@@ -4,7 +4,8 @@
 use opensnip_lib::commands::*;
 use opensnip_lib::plugins::{hotkey, tray};
 use tauri::{Emitter, Manager};
-use tauri_plugin_global_shortcut::ShortcutState;
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
+use tauri_plugin_store::StoreExt;
 
 fn main() {
     env_logger::Builder::from_env(env_logger::Env::default().filter_or("RUST_LOG", "info")).init();
@@ -16,32 +17,11 @@ fn main() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().with_handler(|app, shortcut, event| {
             if event.state == ShortcutState::Pressed {
                 let key = shortcut.to_string().to_lowercase();
-                match key.as_str() {
-                    "ctrl+alt+a" => {
-                        log::info!("Global shortcut: Screenshot triggered");
-                        if let Some(window) = app.get_webview_window("main") {
-                            let _ = window.show();
-                            let _ = window.set_focus();
-                            let _ = window.emit("hotkey-screenshot", ());
-                        }
-                    }
-                    "ctrl+alt+s" => {
-                        log::info!("Global shortcut: Scroll capture triggered");
-                        if let Some(window) = app.get_webview_window("main") {
-                            let _ = window.show();
-                            let _ = window.set_focus();
-                            let _ = window.emit("hotkey-scroll-capture", ());
-                        }
-                    }
-                    "ctrl+alt+r" => {
-                        log::info!("Global shortcut: Recording triggered");
-                        if let Some(window) = app.get_webview_window("main") {
-                            let _ = window.show();
-                            let _ = window.set_focus();
-                            let _ = window.emit("hotkey-recording", ());
-                        }
-                    }
-                    _ => {}
+                log::debug!("Shortcut pressed: {}", key);
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                    let _ = window.emit("global-shortcut", key);
                 }
             }
         }).build())
@@ -56,9 +36,24 @@ fn main() {
             if let Err(e) = tray::init_tray(app.handle()) {
                 log::warn!("Failed to initialize tray: {}", e);
             }
-            
-            let cfg = hotkey::HotkeyConfig::default();
-            log::info!("Hotkeys configured: screenshot={}, scroll_capture={}, recording={}",
+
+            // 读取自定义快捷键配置
+            let store = app.store("settings.json")
+                .map_err(|e| format!("Failed to open store: {}", e)).unwrap();
+            let cfg: hotkey::HotkeyConfig = store
+                .get("hotkeys")
+                .and_then(|v| serde_json::from_value(v).ok())
+                .unwrap_or_else(hotkey::HotkeyConfig::default);
+
+            // 注册全局快捷键
+            let gs = app.global_shortcut();
+            for hk in [&cfg.screenshot, &cfg.scroll_capture, &cfg.recording] {
+                if let Err(e) = gs.register(hk.as_str()) {
+                    log::warn!("Failed to register shortcut '{}': {}", hk, e);
+                }
+            }
+
+            log::info!("Hotkeys registered: screenshot={}, scroll_capture={}, recording={}",
                 cfg.screenshot, cfg.scroll_capture, cfg.recording);
             log::info!("Application setup complete");
             Ok(())
@@ -103,6 +98,9 @@ fn main() {
             get_recording_status,
             get_recording_stats,
             get_recording_config,
+            // Hotkey commands
+            get_hotkey_config,
+            update_hotkey_config,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

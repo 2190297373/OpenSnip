@@ -6,6 +6,7 @@ pub mod ocr;
 pub mod recording;
 pub mod translation;
 pub mod clipboard;
+pub mod hotkey;
 
 pub use screenshot::*;
 pub use pin::*;
@@ -13,3 +14,4 @@ pub use ocr::*;
 pub use recording::*;
 pub use translation::*;
 pub use clipboard::*;
+pub use hotkey::*;

@@ -10,6 +10,7 @@ import { OcrPanel } from "./components/ocr";
 import { TranslationPanel } from "./components/translation";
 import { RecordingPanel } from "./components/recording";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import "./App.css";
 
 // ============================================
@@ -205,25 +206,18 @@ function AppContent() {
     setIsCapturing(true);
   }, []);
 
-  // 全局快捷键
+  // 全局快捷键 — 监听 Rust 后端发出的 global-shortcut 事件
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    listen("global-shortcut", () => {
+      startCapture("region");
+    }).then((fn) => { unlisten = fn; });
+    return () => { unlisten?.(); };
+  }, [startCapture]);
+
+  // 键盘事件（仅 Esc 取消截图）
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl+Alt+A - 截图
-      if (e.ctrlKey && e.altKey && e.key.toLowerCase() === "a") {
-        e.preventDefault();
-        startCapture("region");
-      }
-      // Ctrl+Alt+S - 滚动截图 (暂时用区域截图代替)
-      if (e.ctrlKey && e.altKey && e.key.toLowerCase() === "s") {
-        e.preventDefault();
-        startCapture("region");
-      }
-      // Ctrl+Alt+F - 全屏截图
-      if (e.ctrlKey && e.altKey && e.key.toLowerCase() === "f") {
-        e.preventDefault();
-        startCapture("fullscreen");
-      }
-      // Escape - 取消截图
       if (e.key === "Escape" && isCapturing) {
         e.preventDefault();
         setIsCapturing(false);

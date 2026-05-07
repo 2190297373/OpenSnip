@@ -56,7 +56,7 @@ export function Settings() {
       recording: shortcuts.recording,
     };
     try {
-      await invoke("update_hotkeys", { config: cfg });
+      await invoke("update_hotkey_config", { cfg });
     } catch (e) {
       console.error("Failed to update hotkeys:", e);
     }

@@ -1,7 +1,7 @@
 //! Screenshot service
 
 use crate::models::screenshot::{
-    CaptureArgs, CaptureRegion, MonitorInfo, Screenshot, WindowInfo,
+    CaptureArgs, CaptureMode, CaptureRegion, MonitorInfo, Screenshot, WindowInfo,
 };
 use screenshots::{Compression, Screen};
 use std::time::Instant;
