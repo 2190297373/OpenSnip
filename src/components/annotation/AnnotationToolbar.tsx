@@ -13,7 +13,7 @@ export function AnnotationToolbar() {
     { type: "text", icon: "T", label: "文字" },
     { type: "mosaic", icon: "▦", label: "马赛克" },
     { type: "blur", icon: "◯", label: "模糊" },
-    { type: "highlight", icon: "▬", label: "高亮" },
+    { type: "highlighter", icon: "▬", label: "高亮" },
     { type: "numbering", icon: "①", label: "编号" },
   ];
 
