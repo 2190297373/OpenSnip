@@ -1,26 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import './i18n/i18n';
-import { Button, Modal, Tooltip, ToastProvider } from "./components/ui";
-import { Toolbar, Sidebar, Settings } from "./components/layout";
+import { ToastProvider } from "./components/ui";
+import { Settings } from "./components/layout";
 import { SelectionOverlay, type SelectionRegion } from "./components/capture";
 import { CanvasProvider, useCanvas, AnnotationCanvas, AnnotationToolbar, LayerPanel, BeautifyPanel } from "./components/annotation";
 import { annotationsToSvg, downloadSvg } from "./components/annotation/svgExport";
-import { PinManager, createPinWindow, PinPage } from "./components/pin";
-import { OcrPanel } from "./components/ocr";
-import { TranslationPanel } from "./components/translation";
-import { RecordingPanel } from "./components/recording";
+import { createPinWindow, PinPage } from "./components/pin";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
 
-// ============================================
-// 类型定义
-// ============================================
-
 type AppView = "home" | "settings";
-type MainView = "capture" | "annotate" | "pin" | "ocr" | "translation" | "recording";
 
-// 截图图片
 interface CapturedImage {
   id: string;
   dataUrl: string;
@@ -29,64 +20,73 @@ interface CapturedImage {
   timestamp: number;
 }
 
-// 检测是否为独立贴图窗口模式（必须在组件外部，避免 Hooks 条件调用）
 const urlParams = new URLSearchParams(window.location.search);
 const isPinMode = urlParams.get("pin") === "true";
 
 // ============================================
-// 工具配置
+// 浮动底栏 — PixPin 风格操作按钮
 // ============================================
-
-const captureTools = [
-  { id: "region", icon: "rect", label: "区域截图" },
-  { id: "window", icon: "window", label: "窗口截图" },
-  { id: "fullscreen", icon: "screenshot", label: "全屏截图" },
-];
-
-// ============================================
-// 标注视图组件
-// ============================================
-
-function AnnotateView({
+function FloatingBar({
   capturedImage,
   onStartCapture,
   onSaveToFile,
   onPin,
+  onSvgExport,
+  showLayers,
+  setShowLayers,
+  showBeautify,
+  setShowBeautify,
 }: {
   capturedImage: CapturedImage | null;
   onStartCapture: () => void;
   onSaveToFile: () => void;
   onPin: () => void;
+  onSvgExport: () => void;
+  showLayers: boolean;
+  setShowLayers: (v: boolean) => void;
+  showBeautify: boolean;
+  setShowBeautify: (v: boolean) => void;
 }) {
-  const { state, dispatch } = useCanvas();
+  if (!capturedImage) return null;
+  return (
+    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-lg z-30">
+      <button onClick={onStartCapture} className="px-2.5 py-1 text-xs text-[var(--color-text)] hover:bg-[var(--color-background)] rounded-lg transition-colors" title="重截 (R)">🔄 重截</button>
+      <div className="w-px h-4 bg-[var(--color-border)]" />
+      <button onClick={onPin} className="px-2.5 py-1 text-xs text-[var(--color-text)] hover:bg-[var(--color-background)] rounded-lg transition-colors" title="钉到桌面">📌 钉图</button>
+      <button onClick={onSvgExport} className="px-2.5 py-1 text-xs text-[var(--color-text)] hover:bg-[var(--color-background)] rounded-lg transition-colors" title="SVG 导出">SVG</button>
+      <button onClick={onSaveToFile} className="px-2.5 py-1 text-xs text-[var(--color-text)] hover:bg-[var(--color-background)] rounded-lg transition-colors" title="保存为 PNG">💾 保存</button>
+      <div className="w-px h-4 bg-[var(--color-border)]" />
+      <button onClick={() => setShowLayers(!showLayers)}
+        className={`px-2.5 py-1 text-xs rounded-lg transition-colors ${showLayers ? "bg-blue-500/20 text-blue-600 dark:text-blue-400" : "text-[var(--color-text)] hover:bg-[var(--color-background)]"}`}
+        title="图层">📐</button>
+      <button onClick={() => setShowBeautify(!showBeautify)}
+        className={`px-2.5 py-1 text-xs rounded-lg transition-colors ${showBeautify ? "bg-green-500/20 text-green-600 dark:text-green-400" : "text-[var(--color-text)] hover:bg-[var(--color-background)]"}`}
+        title="美化">✨</button>
+    </div>
+  );
+}
+
+// ============================================
+// 标注视图
+// ============================================
+function AnnotateView({
+  capturedImage,
+  onStartCapture,
+  onSaveToFile,
+  onPin,
+  onSvgExport,
+}: {
+  capturedImage: CapturedImage | null;
+  onStartCapture: () => void;
+  onSaveToFile: () => void;
+  onPin: () => void;
+  onSvgExport: () => void;
+}) {
+  const { dispatch } = useCanvas();
   const initializedRef = useRef(false);
+  const [showLayers, setShowLayers] = useState(false);
+  const [showBeautify, setShowBeautify] = useState(false);
 
-  // SVG 导出
-  const handleSvgExport = useCallback(() => {
-    // Collect all annotations from all visible layers
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const layers = (state as any).layers;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let allAnnotations: any[] = [];
-    if (layers && layers.length > 0) {
-      for (const layer of layers) {
-        if (layer.visible) {
-          allAnnotations = allAnnotations.concat(layer.annotations);
-        }
-      }
-    } else {
-      allAnnotations = state.annotations;
-    }
-
-    const svg = annotationsToSvg(allAnnotations, {
-      backgroundImage: capturedImage?.dataUrl,
-      width: state.canvasWidth,
-      height: state.canvasHeight,
-    });
-    downloadSvg(svg);
-  }, [state, capturedImage]);
-
-  // 当截图变化时，更新 CanvasContext 的 image
   useEffect(() => {
     if (capturedImage && !initializedRef.current) {
       dispatch({ type: "SET_IMAGE", payload: capturedImage.dataUrl });
@@ -94,80 +94,50 @@ function AnnotateView({
     }
   }, [capturedImage, dispatch]);
 
-  // 重置图像引用当截图变化时
   useEffect(() => {
     initializedRef.current = false;
   }, [capturedImage?.id]);
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      {/* 标注工具栏 - 使用 CanvasContext */}
+    <div className="flex-1 flex flex-col overflow-hidden bg-[var(--color-surface)]">
+      {/* 浮动工具栏 — 贴近画布 */}
       <AnnotationToolbar />
       
-      {/* 标注画布 - 使用 CanvasContext */}
-      <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1 overflow-auto bg-[var(--color-surface)]">
+      {/* 画布区域 */}
+      <div className="flex-1 flex overflow-hidden relative">
+        <div className="flex-1 overflow-auto flex items-center justify-center">
           {capturedImage ? (
-            <div className="flex items-center justify-center min-h-full">
-              <AnnotationCanvas className="max-w-full max-h-full" />
-            </div>
+            <AnnotationCanvas className="max-w-full max-h-full" />
           ) : (
-            <div className="flex items-center justify-center h-full text-[var(--color-text-muted)]">
-              暂无截图，请先截图
-            </div>
+            <div className="text-[var(--color-text-muted)]">Ctrl+Alt+A 截图</div>
           )}
         </div>
-        <LayerPanel />
-        <BeautifyPanel />
+
+        {/* 滑出面板 */}
+        {showLayers && (
+          <div className="absolute right-0 top-0 bottom-0 z-20 shadow-xl">
+            <LayerPanel />
+          </div>
+        )}
+        {showBeautify && (
+          <div className="absolute right-0 top-0 bottom-0 z-20 shadow-xl">
+            <BeautifyPanel />
+          </div>
+        )}
+
+        {/* 浮动底栏 */}
+        <FloatingBar
+          capturedImage={capturedImage}
+          onStartCapture={onStartCapture}
+          onSaveToFile={onSaveToFile}
+          onPin={onPin}
+          onSvgExport={onSvgExport}
+          showLayers={showLayers}
+          setShowLayers={setShowLayers}
+          showBeautify={showBeautify}
+          setShowBeautify={setShowBeautify}
+        />
       </div>
-      
-      {/* 底部操作栏 */}
-      <div className="flex items-center justify-between px-4 py-2 border-t border-[var(--color-border)] bg-[var(--color-background)]">
-        <div className="flex gap-2">
-          <Button size="sm" onClick={onStartCapture}>重新截图</Button>
-        </div>
-        <div className="flex gap-2">
-          <Button size="sm" variant="secondary" onClick={onPin}>📌 钉图</Button>
-          <Button size="sm" variant="secondary" onClick={handleSvgExport}>SVG 导出</Button>
-          <Button size="sm" variant="secondary" onClick={onSaveToFile}>保存</Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ============================================
-// OCR 视图组件
-// ============================================
-
-function OcrView({
-  capturedImage,
-}: {
-  capturedImage: CapturedImage | null;
-}) {
-  return (
-    <div className="flex-1 overflow-auto p-4">
-      <OcrPanel
-        image={capturedImage?.dataUrl}
-        width={capturedImage?.width}
-        height={capturedImage?.height}
-      />
-    </div>
-  );
-}
-
-// ============================================
-// 翻译视图组件
-// ============================================
-
-function TranslationView({
-  initialText,
-}: {
-  initialText?: string;
-}) {
-  return (
-    <div className="h-full">
-      <TranslationPanel initialText={initialText} />
     </div>
   );
 }
@@ -175,39 +145,22 @@ function TranslationView({
 // ============================================
 // 主应用
 // ============================================
-
 function AppContent() {
-  // 视图状态
   const [view, setView] = useState<AppView>("home");
-  const [mainView, setMainView] = useState<MainView>("capture");
-  
-  // 截图状态
   const [isCapturing, setIsCapturing] = useState(false);
   const [captureMode, setCaptureMode] = useState<"region" | "window" | "fullscreen">("region");
   const [capturedImage, setCapturedImage] = useState<CapturedImage | null>(null);
-  
-  // UI 状态
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [showAbout, setShowAbout] = useState(false);
-  const [showTranslationModal, setShowTranslationModal] = useState(false);
-  const [translationText, setTranslationText] = useState<string | undefined>();
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
 
-  // 主题切换
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
   }, [theme]);
 
-  const toggleTheme = () => {
-    setTheme((t) => (t === "light" ? "dark" : "light"));
-  };
-
-  // 开始截图
   const startCapture = useCallback((mode: "region" | "window" | "fullscreen") => {
     setCaptureMode(mode);
     setIsCapturing(true);
   }, []);
 
-  // 全局快捷键 — 监听 Rust 后端发出的 global-shortcut 事件
   useEffect(() => {
     let unlisten: (() => void) | undefined;
     listen("global-shortcut", () => {
@@ -216,7 +169,6 @@ function AppContent() {
     return () => { unlisten?.(); };
   }, [startCapture]);
 
-  // 键盘事件（仅 Esc 取消截图）
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isCapturing) {
@@ -224,40 +176,20 @@ function AppContent() {
         setIsCapturing(false);
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [startCapture, isCapturing]);
+  }, [isCapturing]);
 
-  // 处理截图完成
   const handleCapture = useCallback(async (region: SelectionRegion) => {
     setIsCapturing(false);
-    
     try {
-      // 构建 CaptureArgs
-      const args: {
-        mode: string;
-        region?: { x: number; y: number; width: number; height: number; source: string };
-        window_hwnd?: number;
-      } = {
-        mode: region.mode,
-      };
-      
+      const args: Record<string, unknown> = { mode: region.mode };
       if (region.mode === "region") {
-        args.region = {
-          x: region.x,
-          y: region.y,
-          width: region.width,
-          height: region.height,
-          source: "region",
-        };
+        args.region = { x: region.x, y: region.y, width: region.width, height: region.height, source: "region" };
       } else if (region.mode === "window" && region.windowHwnd) {
         args.window_hwnd = region.windowHwnd;
       }
-      
-      // 调用 Rust 后端进行截图
       const base64Data = await invoke<string>("capture_as_png", { args });
-      
       const newCapture: CapturedImage = {
         id: `capture-${Date.now()}`,
         dataUrl: `data:image/png;base64,${base64Data}`,
@@ -265,267 +197,100 @@ function AppContent() {
         height: region.height,
         timestamp: Date.now(),
       };
-      
       setCapturedImage(newCapture);
-      setMainView("annotate");
-      
-      // 自动复制到剪贴板
       try {
-        const response = await fetch(newCapture.dataUrl);
-        const blob = await response.blob();
-        await navigator.clipboard.write([
-          new ClipboardItem({ [blob.type]: blob })
-        ]);
-      } catch (clipErr) {
-        console.warn("Auto-copy to clipboard failed:", clipErr);
-      }
-    } catch (err) {
-      console.error("截图失败:", err);
-      // 降级：创建空白画布
+        const blob = await (await fetch(newCapture.dataUrl)).blob();
+        await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+      } catch { /* silent */ }
+    } catch {
       const canvas = document.createElement("canvas");
       canvas.width = region.width;
       canvas.height = region.height;
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, region.width, region.height);
-      }
-      
-      const newCapture: CapturedImage = {
-        id: `capture-${Date.now()}`,
-        dataUrl: canvas.toDataURL("image/png"),
-        width: region.width,
-        height: region.height,
-        timestamp: Date.now(),
-      };
-      setCapturedImage(newCapture);
-      setMainView("annotate");
+      canvas.getContext("2d")!.fillStyle = "#fff";
+      canvas.getContext("2d")!.fillRect(0, 0, region.width, region.height);
+      setCapturedImage({ id: `capture-${Date.now()}`, dataUrl: canvas.toDataURL("image/png"), width: region.width, height: region.height, timestamp: Date.now() });
     }
   }, []);
 
-  // 取消截图
-  const handleCancelCapture = useCallback(() => {
-    setIsCapturing(false);
-  }, []);
+  const handleCancelCapture = useCallback(() => setIsCapturing(false), []);
 
-  // 保存到文件
   const handleSaveToFile = useCallback(async () => {
     if (!capturedImage) return;
-
     try {
-      // 移除 data URL 前缀
-      const base64Data = capturedImage.dataUrl.replace(/^data:image\/\w+;base64,/, "");
-
-      await invoke<string>("save_screenshot", {
-        data: base64Data,
-        filename: `opensnip-${Date.now()}.png`,
-      });
-
-      // 保存成功
-    } catch (err) {
-      console.error("保存失败:", err);
-      // 降级：使用浏览器下载
-      const link = document.createElement("a");
-      link.download = `opensnip-${Date.now()}.png`;
-      link.href = capturedImage.dataUrl;
-      link.click();
+      await invoke<string>("save_screenshot", { data: capturedImage.dataUrl.replace(/^data:image\/\w+;base64,/, ""), filename: `opensnip-${Date.now()}.png` });
+    } catch {
+      const a = document.createElement("a");
+      a.download = `opensnip-${Date.now()}.png`;
+      a.href = capturedImage.dataUrl;
+      a.click();
     }
   }, [capturedImage]);
 
-  // 钉图为置顶窗口
   const handlePin = useCallback(async () => {
     if (!capturedImage) return;
-    try {
-      await createPinWindow({
-        imageDataUrl: capturedImage.dataUrl,
-        width: capturedImage.width,
-        height: capturedImage.height,
-      });
-    } catch (err) {
-      console.error("钉图失败:", err);
-    }
+    try { await createPinWindow({ imageDataUrl: capturedImage.dataUrl, width: capturedImage.width, height: capturedImage.height }); }
+    catch { /* silent */ }
   }, [capturedImage]);
 
-  // 渲染主视图内容
-  const renderMainContent = () => {
-    switch (mainView) {
-      case "capture":
-        return (
-          <div className="flex-1 flex items-center justify-center bg-[var(--color-background)]">
-            <div className="text-center">
-              <div className="text-6xl mb-4">📸</div>
-              <h1 className="text-2xl font-bold text-[var(--color-text)] mb-2">OpenSnip</h1>
-              <p className="text-[var(--color-text-muted)] mb-6">
-                按下 <kbd className="px-2 py-0.5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded text-xs font-mono">Ctrl+Alt+A</kbd> 截图
-              </p>
-              <div className="flex gap-2 justify-center flex-wrap">
-                <Button onClick={() => startCapture("region")}>区域截图</Button>
-                <Button variant="secondary" onClick={() => startCapture("window")}>窗口截图</Button>
-                <Button variant="secondary" onClick={() => startCapture("fullscreen")}>全屏截图</Button>
-              </div>
-            </div>
-          </div>
-        );
-        
-      case "annotate":
-        return (
-          <AnnotateView
-            capturedImage={capturedImage}
-            onStartCapture={() => startCapture("region")}
-            onSaveToFile={handleSaveToFile}
-            onPin={handlePin}
-          />
-        );
-        
-      case "pin":
-        return (
-          <div className="flex-1 overflow-auto p-4">
-            <PinManager />
-          </div>
-        );
-        
-      case "ocr":
-        return (
-          <OcrView capturedImage={capturedImage} />
-        );
-        
-      case "translation":
-        return (
-          <TranslationView initialText={translationText} />
-        );
-        
-      case "recording":
-        return (
-          <div className="flex-1 overflow-auto p-4">
-            <RecordingPanel />
-          </div>
-        );
-        
-      default:
-        return null;
-    }
-  };
+  const { state } = useCanvas();
+  const handleSvgExport = useCallback(() => {
+    const layers = (state as any).layers;
+    let allAnnotations: any[] = [];
+    if (layers?.length) { for (const l of layers) { if (l.visible) allAnnotations = allAnnotations.concat(l.annotations); } }
+    else { allAnnotations = state.annotations; }
+    downloadSvg(annotationsToSvg(allAnnotations, { backgroundImage: capturedImage?.dataUrl, width: state.canvasWidth, height: state.canvasHeight }));
+  }, [state, capturedImage]);
 
   return (
     <div className="h-screen flex flex-col bg-[var(--color-background)]">
-      {/* 工具栏 */}
-      <Toolbar
-        title="OpenSnip"
-        tools={captureTools.map((t) => ({ ...t, active: captureMode === t.id }))}
-        onToolClick={(id) => {
-          startCapture(id as "region" | "window" | "fullscreen");
-        }}
-        actions={
-          <>
-            <Tooltip content={theme === "light" ? "深色模式" : "浅色模式"}>
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-background)]"
-              >
-                {theme === "light" ? "🌙" : "☀️"}
-              </button>
-            </Tooltip>
-            <Tooltip content="设置">
-              <button
-                onClick={() => setView("settings")}
-                className="p-2 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-background)]"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </button>
-            </Tooltip>
-            <Tooltip content="关于">
-              <button
-                onClick={() => setShowAbout(true)}
-                className="p-2 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-background)]"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </button>
-            </Tooltip>
-          </>
-        }
-      />
+      {/* 极简顶栏 */}
+      <header className="flex items-center justify-between h-9 px-3 border-b border-[var(--color-border)] bg-[var(--color-background)] shrink-0">
+        <span className="text-xs font-medium text-[var(--color-text-muted)] select-none">OpenSnip</span>
+        <div className="flex items-center gap-1">
+          <button onClick={() => setTheme(t => t === "dark" ? "light" : "dark")} className="px-2 py-0.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] rounded transition-colors" title="主题">
+            {theme === "dark" ? "☀️" : "🌙"}
+          </button>
+          <button onClick={() => setView(v => v === "settings" ? "home" : "settings")} className="px-2 py-0.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] rounded transition-colors" title="设置">
+            {view === "settings" ? "← 返回" : "⚙️"}
+          </button>
+        </div>
+      </header>
 
-      {/* 主内容区 */}
+      {/* 主内容 */}
       <div className="flex-1 flex overflow-hidden">
         {view === "settings" ? (
           <Settings />
+        ) : capturedImage ? (
+          <AnnotateView capturedImage={capturedImage} onStartCapture={() => startCapture("region")} onSaveToFile={handleSaveToFile} onPin={handlePin} onSvgExport={handleSvgExport} />
         ) : (
-          <>
-            {/* 侧边栏 */}
-            <Sidebar
-              items={[
-                { id: "capture", label: "截图", icon: "capture" },
-                { id: "annotate", label: "标注", icon: "annotate" },
-                { id: "pin", label: "贴图", icon: "pin" },
-                { id: "ocr", label: "文字识别", icon: "ocr" },
-                { id: "translation", label: "翻译", icon: "translation" },
-                { id: "recording", label: "录屏", icon: "recording" },
-              ]}
-              activeId={mainView}
-              onSelect={(id) => setMainView(id as MainView)}
-            />
-
-            {/* 主视图 */}
-            {renderMainContent()}
-          </>
+          <div className="flex-1 flex items-center justify-center bg-[var(--color-surface)]">
+            <div className="text-center">
+              <div className="text-5xl mb-3">📸</div>
+              <p className="text-sm text-[var(--color-text-muted)] mb-4">
+                <kbd className="px-2 py-0.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded text-xs font-mono">Ctrl+Alt+A</kbd> 截图
+              </p>
+              <div className="flex gap-2 justify-center">
+                <button onClick={() => startCapture("region")} className="px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg transition-colors">区域截图</button>
+                <button onClick={() => startCapture("fullscreen")} className="px-4 py-1.5 border border-[var(--color-border)] hover:bg-[var(--color-background)] text-sm rounded-lg transition-colors text-[var(--color-text)]">全屏截图</button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
 
       {/* 截图覆盖层 */}
       {isCapturing && (
-        <SelectionOverlay
-          mode={captureMode}
-          onCapture={handleCapture}
-          onCancel={handleCancelCapture}
-        />
+        <SelectionOverlay mode={captureMode} onCapture={handleCapture} onCancel={handleCancelCapture} />
       )}
-
-      {/* 翻译弹窗 */}
-      {showTranslationModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowTranslationModal(false)}>
-          <div className="bg-[var(--color-background)] rounded-lg shadow-xl w-[600px] max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <TranslationPanel 
-              initialText={translationText}
-              onTranslationComplete={(text) => {
-                setTranslationText(text);
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* 关于弹窗 */}
-      <Modal open={showAbout} onClose={() => setShowAbout(false)} title="关于" width="sm">
-        <div className="text-center space-y-3">
-          <div className="text-5xl">📸</div>
-          <h2 className="text-xl font-bold">OpenSnip</h2>
-          <p className="text-sm text-[var(--color-text-muted)]">版本 0.1.0</p>
-          <p className="text-sm text-[var(--color-text-muted)]">
-            免费开源的 Windows 截图工具，使用 Tauri v2 + Rust 构建。
-          </p>
-          <p className="text-xs text-[var(--color-text-muted)]">
-            功能：截图、标注、贴图、OCR、翻译、录屏
-          </p>
-        </div>
-      </Modal>
     </div>
   );
 }
 
 // ============================================
-// 根组件 - 提供 CanvasProvider 和 ToastProvider
+// 根组件
 // ============================================
-
 function App() {
-  if (isPinMode) {
-    return <PinPage />;
-  }
-
+  if (isPinMode) return <PinPage />;
   return (
     <ToastProvider>
       <CanvasProvider>
