@@ -1,6 +1,6 @@
 //! Screenshot commands
 
-use crate::models::screenshot::{CaptureArgs, CaptureMode, CaptureRegion, MonitorInfo, Screenshot};
+use crate::models::screenshot::{CaptureArgs, CaptureRegion, MonitorInfo, Screenshot};
 use crate::services::screenshot::ScreenshotService;
 use std::sync::Mutex;
 use tauri::{command, Manager};
