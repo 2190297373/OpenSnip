@@ -6,7 +6,6 @@ interface SelectionOverlayProps {
   mode: SelectionMode;
   onCapture: (region: SelectionRegion) => void;
   onCancel: () => void;
-  availableWindows?: WindowInfo[];
 }
 
 export interface SelectionRegion {
@@ -18,305 +17,99 @@ export interface SelectionRegion {
   windowHwnd?: number;
 }
 
-interface WindowInfo {
-  hwnd: number;
-  title: string;
-  className: string;
-  bounds: { x: number; y: number; width: number; height: number };
-}
+interface Point { x: number; y: number; }
 
-interface Point {
-  x: number;
-  y: number;
-}
-
-export function SelectionOverlay({
-  mode,
-  onCapture,
-  onCancel,
-  availableWindows = [],
-}: SelectionOverlayProps) {
+export function SelectionOverlay({ mode, onCapture, onCancel }: SelectionOverlayProps) {
   const [isSelecting, setIsSelecting] = useState(false);
   const [startPoint, setStartPoint] = useState<Point | null>(null);
   const [endPoint, setEndPoint] = useState<Point | null>(null);
-  const [showWindows, setShowWindows] = useState(false);
   const [cursorPos, setCursorPos] = useState<Point>({ x: 0, y: 0 });
-  const overlayRef = useRef<HTMLDivElement>(null);
 
-  // Calculate selection rectangle
-  const selectionRect = startPoint && endPoint
-    ? {
-        x: Math.min(startPoint.x, endPoint.x),
-        y: Math.min(startPoint.y, endPoint.y),
-        width: Math.abs(endPoint.x - startPoint.x),
-        height: Math.abs(endPoint.y - startPoint.y),
-      }
+  const rect = startPoint && endPoint
+    ? { x: Math.min(startPoint.x, endPoint.x), y: Math.min(startPoint.y, endPoint.y), width: Math.abs(endPoint.x - startPoint.x), height: Math.abs(endPoint.y - startPoint.y) }
     : null;
 
-  // Handle mouse down
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
     if (mode !== "region") return;
     setIsSelecting(true);
     setStartPoint({ x: e.clientX, y: e.clientY });
     setEndPoint({ x: e.clientX, y: e.clientY });
   }, [mode]);
 
-  // Handle mouse move
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+  const onMouseMove = useCallback((e: React.MouseEvent) => {
     setCursorPos({ x: e.clientX, y: e.clientY });
-    
-    if (isSelecting && mode === "region") {
-      setEndPoint({ x: e.clientX, y: e.clientY });
-    }
+    if (isSelecting && mode === "region") setEndPoint({ x: e.clientX, y: e.clientY });
   }, [isSelecting, mode]);
 
-  // Handle mouse up
-  const handleMouseUp = useCallback(() => {
-    if (!isSelecting || mode !== "region") return;
+  const onMouseUp = useCallback(() => {
+    if (!isSelecting || !rect || rect.width < 5 || rect.height < 5) return;
     setIsSelecting(false);
-    
-    if (selectionRect && selectionRect.width > 10 && selectionRect.height > 10) {
-      onCapture({
-        x: Math.round(selectionRect.x),
-        y: Math.round(selectionRect.y),
-        width: Math.round(selectionRect.width),
-        height: Math.round(selectionRect.height),
-        mode: "region",
-      });
-    }
-  }, [isSelecting, mode, selectionRect, onCapture]);
+    onCapture({ x: Math.round(rect.x), y: Math.round(rect.y), width: Math.round(rect.width), height: Math.round(rect.height), mode: "region" });
+  }, [isSelecting, rect, onCapture]);
 
-  // Handle key down
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onCancel();
-      } else if (e.key === "1") {
-        // Switch to region mode
-      } else if (e.key === "2") {
-        // Switch to window mode
-        setShowWindows(true);
-      } else if (e.key === "3") {
-        // Fullscreen
-        onCapture({
-          x: 0,
-          y: 0,
-          width: window.screen.width,
-          height: window.screen.height,
-          mode: "fullscreen",
-        });
-      } else if (e.key === "Enter" && selectionRect) {
-        // Confirm selection
-        onCapture({
-          x: Math.round(selectionRect.x),
-          y: Math.round(selectionRect.y),
-          width: Math.round(selectionRect.width),
-          height: Math.round(selectionRect.height),
-          mode: "region",
-        });
-      }
+    const h = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel();
+      if ((e.key === "Enter" || e.key === " ") && rect && rect.width > 5) onCapture({ x: Math.round(rect.x), y: Math.round(rect.y), width: Math.round(rect.width), height: Math.round(rect.height), mode: "region" });
     };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onCancel, onCapture, selectionRect]);
-
-  // Handle window selection
-  const handleWindowSelect = (window: WindowInfo) => {
-    onCapture({
-      x: window.bounds.x,
-      y: window.bounds.y,
-      width: window.bounds.width,
-      height: window.bounds.height,
-      mode: "window",
-      windowHwnd: window.hwnd,
-    });
-  };
-
-  // Fullscreen capture
-  const handleFullscreen = () => {
-    onCapture({
-      x: 0,
-      y: 0,
-      width: window.screen.width,
-      height: window.screen.height,
-      mode: "fullscreen",
-    });
-  };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [onCancel, onCapture, rect]);
 
   return (
-    <div
-      ref={overlayRef}
-      className="fixed inset-0 z-50 cursor-crosshair select-none"
-      style={{ background: "rgba(0, 0, 0, 0.3)" }}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-    >
-      {/* Darkened area with cutout */}
-      {selectionRect && mode === "region" && (
-        <>
-          {/* Top */}
-          <div
-            className="absolute bg-black/50"
-            style={{
-              left: 0,
-              top: 0,
-              right: 0,
-              height: selectionRect.y,
-            }}
-          />
-          {/* Bottom */}
-          <div
-            className="absolute bg-black/50"
-            style={{
-              left: 0,
-              top: selectionRect.y + selectionRect.height,
-              right: 0,
-              bottom: 0,
-            }}
-          />
-          {/* Left */}
-          <div
-            className="absolute bg-black/50"
-            style={{
-              left: 0,
-              top: selectionRect.y,
-              width: selectionRect.x,
-              height: selectionRect.height,
-            }}
-          />
-          {/* Right */}
-          <div
-            className="absolute bg-black/50"
-            style={{
-              left: selectionRect.x + selectionRect.width,
-              top: selectionRect.y,
-              right: 0,
-              height: selectionRect.height,
-            }}
-          />
-        </>
-      )}
+    <div ref={useRef<HTMLDivElement>(null)} className="fixed inset-0 z-50 cursor-crosshair select-none" style={{ background: "rgba(0,0,0,0.28)" }}
+      onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp}>
 
-      {/* Selection rectangle */}
-      {selectionRect && selectionRect.width > 0 && selectionRect.height > 0 && (
-        <div
-          className="absolute border-2 border-blue-500 bg-transparent"
-          style={{
-            left: selectionRect.x,
-            top: selectionRect.y,
-            width: selectionRect.width,
-            height: selectionRect.height,
-          }}
-        >
-          {/* Size indicator */}
-          <div
-            className="absolute -top-8 left-1/2 -translate-x-1/2 bg-blue-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap"
-            style={{ display: mode === "region" ? "block" : "none" }}
-          >
-            {selectionRect.width} × {selectionRect.height}
+      {/* Selection cutout */}
+      {rect && rect.width > 0 && mode === "region" && (<>
+        <div className="absolute bg-black/40" style={{ left: 0, top: 0, right: 0, height: rect.y }} />
+        <div className="absolute bg-black/40" style={{ left: 0, top: rect.y + rect.height, right: 0, bottom: 0 }} />
+        <div className="absolute bg-black/40" style={{ left: 0, top: rect.y, width: rect.x, height: rect.height }} />
+        <div className="absolute bg-black/40" style={{ left: rect.x + rect.width, top: rect.y, right: 0, height: rect.height }} />
+      </>)}
+
+      {/* Selection border + size label */}
+      {rect && rect.width > 0 && rect.height > 0 && (
+        <div className="absolute border-2 border-blue-400/80 rounded-sm" style={{ left: rect.x, top: rect.y, width: rect.width, height: rect.height }}>
+          <div className="absolute -top-9 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2.5 py-1 rounded-lg font-mono whitespace-nowrap shadow-lg">
+            {rect.width} × {rect.height}
           </div>
-
-          {/* Corner handles */}
-          {["nw", "ne", "sw", "se"].map((corner) => (
-            <div
-              key={corner}
-              className="absolute w-3 h-3 bg-white border-2 border-blue-500"
-              style={{
-                ...(corner.includes("n") ? { top: -2, transform: "translateY(-50%)" } : { bottom: -2, transform: "translateY(50%)" }),
-                ...(corner.includes("w") ? { left: -2, transform: "translateX(-50%)" } : { right: -2, transform: "translateX(50%)" }),
-              }}
-            />
+          {/* Corner dots */}
+          {["nw","ne","sw","se"].map(c => (
+            <div key={c} className="absolute w-2.5 h-2.5 bg-blue-400 border-2 border-white rounded-full"
+              style={{ ...(c[0]==="n"?{top:-4}:{bottom:-4}), ...(c[1]==="w"?{left:-4}:{right:-4}) }} />
           ))}
         </div>
       )}
 
-      {/* Coordinate display */}
-      <div
-        className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-3 py-1.5 rounded font-mono"
-        style={{ display: mode === "region" ? "block" : "none" }}
-      >
-        X: {cursorPos.x} | Y: {cursorPos.y}
-      </div>
-
-      {/* Mode switcher */}
-      <div className="fixed top-4 left-1/2 -translate-x-1/2 flex gap-2 bg-black/80 rounded-lg p-1">
-        <button
-          className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-            mode === "region"
-              ? "bg-blue-500 text-white"
-              : "text-gray-300 hover:text-white hover:bg-white/10"
-          }`}
-          onClick={() => {/* Switch to region mode */}}
-        >
-          Region (1)
-        </button>
-        <button
-          className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-            mode === "window"
-              ? "bg-blue-500 text-white"
-              : "text-gray-300 hover:text-white hover:bg-white/10"
-          }`}
-          onClick={() => setShowWindows(!showWindows)}
-        >
-          Window (2)
-        </button>
-        <button
-          className="px-4 py-2 rounded text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
-          onClick={handleFullscreen}
-        >
-          Fullscreen (3)
-        </button>
-      </div>
-
-      {/* Cancel button */}
-      <button
-        className="fixed top-4 right-4 w-10 h-10 rounded-full bg-black/80 text-white flex items-center justify-center hover:bg-black/60 transition-colors"
-        onClick={onCancel}
-        title="Cancel (Esc)"
-      >
-        ✕
-      </button>
-
-      {/* Window selection list */}
-      {showWindows && mode === "window" && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 w-96 max-h-96 overflow-y-auto bg-black/90 rounded-lg shadow-xl">
-          <div className="sticky top-0 bg-black/95 px-4 py-2 border-b border-white/10">
-            <h3 className="text-white font-medium">Select Window</h3>
-            <p className="text-gray-400 text-xs">Click to capture window</p>
-          </div>
-          <div className="p-2">
-            {availableWindows.length === 0 ? (
-              <p className="text-gray-400 text-sm p-4 text-center">No windows available</p>
-            ) : (
-              availableWindows.map((win) => (
-                <button
-                  key={win.hwnd}
-                  className="w-full text-left p-3 rounded hover:bg-white/10 transition-colors group"
-                  onClick={() => handleWindowSelect(win)}
-                >
-                  <div className="text-white text-sm font-medium truncate">
-                    {win.title || "Untitled"}
-                  </div>
-                  <div className="text-gray-400 text-xs mt-0.5">
-                    {win.bounds.width} × {win.bounds.height}
-                  </div>
-                </button>
-              ))
-            )}
+      {/* Cursor crosshair — follows mouse during selection */}
+      {(mode === "region" || isSelecting) && (
+        <div className="fixed pointer-events-none z-50" style={{ left: cursorPos.x, top: cursorPos.y }}>
+          <div className="absolute w-4 h-px bg-blue-400/60 -translate-x-1/2" />
+          <div className="absolute h-4 w-px bg-blue-400/60 -translate-y-1/2" />
+          <div className="absolute -top-10 left-4 bg-black/80 text-[10px] text-blue-300 font-mono px-1.5 py-0.5 rounded whitespace-nowrap shadow">
+            {cursorPos.x}, {cursorPos.y}
           </div>
         </div>
       )}
 
-      {/* Help text */}
-      <div className="fixed bottom-4 right-4 text-gray-400 text-xs">
-        <span className="bg-black/60 px-2 py-1 rounded">Esc to cancel</span>
-        {mode === "region" && (
-          <>
-            <span className="ml-2 bg-black/60 px-2 py-1 rounded">Enter to confirm</span>
-          </>
-        )}
+      {/* Top mode bar — compact */}
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 flex bg-black/70 backdrop-blur-sm rounded-xl p-1 gap-0.5 shadow-xl">
+        {(["region","fullscreen"] as SelectionMode[]).map(m => (
+          <button key={m} onClick={() => m === "fullscreen" ? onCapture({x:0,y:0,width:window.screen.width,height:window.screen.height,mode:"fullscreen"}) : null}
+            className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${mode === m ? "bg-blue-500/80 text-white" : "text-gray-300 hover:text-white hover:bg-white/10"}`}>
+            {m === "region" ? "📐 区域" : "🖥 全屏"}
+          </button>
+        ))}
+        <div className="w-px bg-white/10 mx-1" />
+        <button onClick={onCancel} className="px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white hover:bg-red-500/30 transition-colors">✕ 取消</button>
+      </div>
+
+      {/* Bottom help */}
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 flex gap-2 text-[10px] text-gray-400">
+        <span className="bg-black/50 px-2 py-1 rounded-full">拖拽框选</span>
+        <span className="bg-black/50 px-2 py-1 rounded-full">Enter 确认</span>
+        <span className="bg-black/50 px-2 py-1 rounded-full">Esc 取消</span>
       </div>
     </div>
   );
