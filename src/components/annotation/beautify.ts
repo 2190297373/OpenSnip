@@ -185,8 +185,37 @@ export function applyBeautify(
 }
 
 /**
- * Download beautified canvas as PNG.
+ * Copy canvas as Markdown image to clipboard.
  */
+export async function copyAsMarkdown(canvas: HTMLCanvasElement, altText = "Screenshot") {
+  const dataUrl = canvas.toDataURL("image/png");
+  const md = `![${altText}](${dataUrl})`;
+  await navigator.clipboard.writeText(md);
+}
+
+/**
+ * Generate GitHub issue template Markdown.
+ */
+export async function copyAsIssueTemplate(canvas: HTMLCanvasElement) {
+  const dataUrl = canvas.toDataURL("image/png");
+  const md = [
+    "## Steps to Reproduce",
+    "1. ",
+    "2. ",
+    "3. ",
+    "",
+    "## Expected Behavior",
+    "",
+    "",
+    "## Actual Behavior",
+    "",
+    `![Screenshot](${dataUrl})`,
+    "",
+    "## Environment",
+    `- OpenSnip v1.0.0`,
+  ].join("\n");
+  await navigator.clipboard.writeText(md);
+}
 export function downloadBeautified(canvas: HTMLCanvasElement, filename = "opensnip-beautified.png") {
   const link = document.createElement("a");
   link.download = filename;

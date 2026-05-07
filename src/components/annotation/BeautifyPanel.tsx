@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { beautifyPresets, applyBeautify, downloadBeautified, type BeautifyConfig } from "./beautify";
+import { beautifyPresets, applyBeautify, downloadBeautified, copyAsMarkdown, copyAsIssueTemplate, type BeautifyConfig } from "./beautify";
 
 export function BeautifyPanel() {
   const [config, setConfig] = useState<BeautifyConfig>(beautifyPresets.basic);
@@ -20,6 +20,20 @@ export function BeautifyPanel() {
     if (!src) return;
     const result = applyBeautify(src, config);
     downloadBeautified(result);
+  }, [config]);
+
+  const copyMd = useCallback(async () => {
+    const src = getCanvas();
+    if (!src) return;
+    const result = applyBeautify(src, config);
+    await copyAsMarkdown(result);
+  }, [config]);
+
+  const copyIssue = useCallback(async () => {
+    const src = getCanvas();
+    if (!src) return;
+    const result = applyBeautify(src, config);
+    await copyAsIssueTemplate(result);
   }, [config]);
 
   const selectPreset = (preset: keyof typeof beautifyPresets) => {
@@ -90,19 +104,13 @@ export function BeautifyPanel() {
       </div>
 
       {/* Action buttons */}
+      <div className="flex gap-2 mb-2">
+        <button onClick={apply} className="flex-1 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs transition-colors">预览</button>
+        <button onClick={download} className="flex-1 py-1.5 border border-[var(--color-border)] hover:bg-[var(--color-surface)] rounded text-xs transition-colors">导出 PNG</button>
+      </div>
       <div className="flex gap-2">
-        <button
-          onClick={apply}
-          className="flex-1 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs transition-colors"
-        >
-          预览
-        </button>
-        <button
-          onClick={download}
-          className="flex-1 py-1.5 border border-[var(--color-border)] hover:bg-[var(--color-surface)] rounded text-xs transition-colors"
-        >
-          导出 PNG
-        </button>
+        <button onClick={copyMd} className="flex-1 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded text-xs transition-colors">Copy MD</button>
+        <button onClick={copyIssue} className="flex-1 py-1.5 border border-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded text-xs text-green-700 dark:text-green-300 transition-colors">Issue 模板</button>
       </div>
 
       {/* Preview */}
