@@ -37,13 +37,18 @@ fn main() {
                 log::warn!("Failed to initialize tray: {}", e);
             }
 
-            // 读取自定义快捷键配置
-            let store = app.store("settings.json")
-                .map_err(|e| format!("Failed to open store: {}", e)).unwrap();
-            let cfg: hotkey::HotkeyConfig = store
-                .get("hotkeys")
-                .and_then(|v| serde_json::from_value(v).ok())
-                .unwrap_or_else(hotkey::HotkeyConfig::default);
+            // 读取自定义快捷键配置（优雅降级，首次安装不崩溃）
+            let store = app.store("settings.json");
+            let cfg: hotkey::HotkeyConfig = match &store {
+                Ok(s) => s
+                    .get("hotkeys")
+                    .and_then(|v| serde_json::from_value(v).ok())
+                    .unwrap_or_else(hotkey::HotkeyConfig::default),
+                Err(e) => {
+                    log::warn!("Store unavailable (first run?): {}. Using defaults.", e);
+                    hotkey::HotkeyConfig::default()
+                }
+            };
 
             // 注册全局快捷键
             let gs = app.global_shortcut();
