@@ -3,7 +3,7 @@ import './i18n/i18n';
 import { Button, Modal, Tooltip, ToastProvider } from "./components/ui";
 import { Toolbar, Sidebar, Settings } from "./components/layout";
 import { SelectionOverlay, type SelectionRegion } from "./components/capture";
-import { CanvasProvider, useCanvas, AnnotationCanvas, AnnotationToolbar, LayerPanel } from "./components/annotation";
+import { CanvasProvider, useCanvas, AnnotationCanvas, AnnotationToolbar, LayerPanel, BeautifyPanel } from "./components/annotation";
 import { annotationsToSvg, downloadSvg } from "./components/annotation/svgExport";
 import { PinManager, createPinWindow, PinPage } from "./components/pin";
 import { OcrPanel } from "./components/ocr";
@@ -118,6 +118,7 @@ function AnnotateView({
           )}
         </div>
         <LayerPanel />
+        <BeautifyPanel />
       </div>
       
       {/* 底部操作栏 */}
