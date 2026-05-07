@@ -56,10 +56,10 @@ function FloatingBar({
       <button onClick={onSvgExport} className="px-2.5 py-1 text-xs text-[var(--color-text)] hover:bg-[var(--color-background)] rounded-lg transition-colors" title="SVG 导出">SVG</button>
       <button onClick={onSaveToFile} className="px-2.5 py-1 text-xs text-[var(--color-text)] hover:bg-[var(--color-background)] rounded-lg transition-colors" title="保存为 PNG">💾 保存</button>
       <div className="w-px h-4 bg-[var(--color-border)]" />
-      <button onClick={() => setShowLayers(!showLayers)}
+      <button onClick={() => { setShowLayers(!showLayers); if (!showLayers) setShowBeautify(false); }}
         className={`px-2.5 py-1 text-xs rounded-lg transition-colors ${showLayers ? "bg-blue-500/20 text-blue-600 dark:text-blue-400" : "text-[var(--color-text)] hover:bg-[var(--color-background)]"}`}
         title="图层">📐</button>
-      <button onClick={() => setShowBeautify(!showBeautify)}
+      <button onClick={() => { setShowBeautify(!showBeautify); if (!showBeautify) setShowLayers(false); }}
         className={`px-2.5 py-1 text-xs rounded-lg transition-colors ${showBeautify ? "bg-green-500/20 text-green-600 dark:text-green-400" : "text-[var(--color-text)] hover:bg-[var(--color-background)]"}`}
         title="美化">✨</button>
     </div>
@@ -113,15 +113,21 @@ function AnnotateView({
           )}
         </div>
 
-        {/* 滑出面板 */}
+        {/* 滑出面板 — 互斥展开 */}
         {showLayers && (
-          <div className="absolute right-0 top-0 bottom-0 z-20 shadow-xl">
-            <LayerPanel />
+          <div className="absolute right-0 top-0 bottom-0 z-20 shadow-xl animate-slide-up">
+            <div className="relative h-full">
+              <button onClick={() => setShowLayers(false)} className="absolute top-2 right-2 z-30 w-5 h-5 flex items-center justify-center rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)]" title="关闭">×</button>
+              <LayerPanel />
+            </div>
           </div>
         )}
         {showBeautify && (
-          <div className="absolute right-0 top-0 bottom-0 z-20 shadow-xl">
-            <BeautifyPanel />
+          <div className="absolute right-0 top-0 bottom-0 z-20 shadow-xl animate-slide-up">
+            <div className="relative h-full">
+              <button onClick={() => setShowBeautify(false)} className="absolute top-2 right-2 z-30 w-5 h-5 flex items-center justify-center rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)]" title="关闭">×</button>
+              <BeautifyPanel />
+            </div>
           </div>
         )}
 

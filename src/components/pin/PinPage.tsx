@@ -6,6 +6,7 @@ export default function PinPage() {
   const [imageData, setImageData] = useState<string | null>(null);
   const [isLocked, setIsLocked] = useState(false);
   const [showControls, setShowControls] = useState(false);
+  const [opacity, setOpacity] = useState(0.9);
   const win = getCurrentWebviewWindow();
 
   // Listen for pin-data event from main window
@@ -71,6 +72,8 @@ export default function PinPage() {
         alt="Pinned"
         className="w-full h-full object-contain"
         draggable={false}
+        onDoubleClick={handleClose}
+        style={{ opacity }}
       />
 
       {/* Top control bar */}
@@ -79,8 +82,24 @@ export default function PinPage() {
           showControls ? "opacity-100" : "opacity-0"
         }`}
       >
-        <span className="text-white text-xs select-none">OpenSnip Pin</span>
+        <span className="text-white text-xs select-none">Pin</span>
         <div className="flex items-center gap-1">
+          <input
+            type="range" min="20" max="100" value={Math.round(opacity * 100)}
+            onChange={(e) => setOpacity(+e.target.value / 100)}
+            className="w-16 h-3 accent-blue-400"
+            title="透明度"
+          />
+          <button
+            onClick={async () => {
+              const blob = await (await fetch(imageData!)).blob();
+              await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+            }}
+            className="px-2 py-0.5 text-white text-xs hover:bg-white/20 rounded transition-colors"
+            title="复制图像"
+          >
+            📋
+          </button>
           <button
             onClick={handleToggleLock}
             className="px-2 py-0.5 text-white text-xs hover:bg-white/20 rounded transition-colors"
